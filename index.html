@@ -185,6 +185,16 @@ h3{font-size:12px;color:var(--mut);margin:28px 0 4px;font-weight:600;letter-spac
 .filter{border:1px solid var(--ln);border-radius:99px;padding:6px 12px;background:#fff;white-space:nowrap;font-size:12px}
 .filter.active{background:var(--ac);border-color:var(--ac);color:#fff}
 .lbar{display:flex;justify-content:space-between;align-items:center;margin:10px 0 0;font-size:12px;color:var(--mut)}
+.ybar{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:12px -16px 0;padding:2px 16px 4px;scroll-snap-type:x proximity}.ybar::-webkit-scrollbar{display:none}
+.ybtn{flex:none;border:1px solid var(--ln);background:#fff;border-radius:99px;padding:7px 14px;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);scroll-snap-align:center}
+.ybtn small{font-size:10px;color:var(--mut);margin-left:3px}
+.ybtn.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}.ybtn.on small{color:#fff;opacity:.8}
+.sortb{border:1px solid var(--ln);background:#fff;border-radius:99px;padding:4px 12px;font-size:12px;color:var(--ink)}
+#list{touch-action:pan-y}
+#list.sl{animation:ysl .22s ease-out}#list.sr{animation:ysr .22s ease-out}
+@keyframes ysl{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}@keyframes ysr{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#list.sl,#list.sr{animation:none}}
+.yhint{text-align:center;font-size:11px;color:var(--mut);margin:14px 0 4px}
 .lbar select{border:0;background:var(--sub);border-radius:8px;padding:5px 8px}
 .pill{display:inline-flex;align-items:center;gap:4px;background:var(--ac-l);color:var(--ac);border-radius:99px;padding:4px 4px 4px 11px;font-size:12px;margin-top:8px}
 .pill button{border:0;background:none;color:var(--ac);padding:0 6px;font-size:14px}
@@ -319,7 +329,8 @@ details textarea,.ta{width:100%;min-height:100px;margin-top:8px;padding:10px;bor
 <button class="more" onclick="clearFilters();renderEvents()">条件をクリア</button>
 </div>
 <datalist id="dl_w"></datalist><datalist id="dl_a"></datalist><datalist id="dl_v"></datalist><datalist id="dl_s"></datalist><datalist id="dl_t"></datalist>
-<div class="lbar"><span id="count"></span></div>
+<div class="ybar" id="ybar" role="tablist" aria-label="年"></div>
+<div class="lbar"><span id="count"></span><button type="button" class="sortb" id="sortB" onclick="toggleSort()"></button></div>
 <div id="list"></div>
 </section>
 
@@ -530,7 +541,7 @@ const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${y}.${m}.${dd}
 const fmtMD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+m}月${+dd}日（${WD[new Date(+y,+m-1,+dd).getDay()]}）`};
 
 /* ---------- アイコン（ホーム画面用） ---------- */
-const APP_VER='2026.09.24g';
+const APP_VER='2026.09.25a';
 (function(){if(document.querySelector('link[rel=manifest][href$=".webmanifest"]'))return;try{
  const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
  const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#8196b3');g.addColorStop(1,'#5f7290');x.fillStyle=g;x.fillRect(0,0,180,180);
@@ -595,7 +606,7 @@ function renderHome(){
  }
 function syncType(){document.querySelectorAll('#tfil .filter').forEach(b=>b.classList.toggle('active',b.dataset.t===view.type))}
 function fillFilterOpts(){
- const years=uniq(es.map(e=>e.date.slice(0,4))).sort().reverse(),yv=$('f_y').value,pv=$('f_p').value;
+ const years=uniq(es.map(e=>e.date.slice(0,4))).sort().reverse(),cy=today().slice(0,4),yv=$('f_y').dataset.init?$('f_y').value:(settings.evYear!=null&&(settings.evYear===''||years.includes(settings.evYear))?settings.evYear:years.includes(cy)?cy:''),pv=$('f_p').value;$('f_y').dataset.init=1;
  $('f_y').innerHTML='<option value="">全期間</option>'+years.map(y=>`<option value="${y}">${y}年</option>`).join('');$('f_y').value=yv;
  $('f_p').innerHTML='<option value="">すべて</option>'+uniq(es.map(e=>e.pref)).sort((a,b)=>PREFS.indexOf(a)-PREFS.indexOf(b)).map(p=>`<option>${esc(p)}</option>`).join('');$('f_p').value=pv;
  const dl=(id,arr)=>$(id).innerHTML=cnt(arr).map(v=>`<option value="${esc(v[0])}">`).join('');
@@ -607,9 +618,19 @@ function renderEvents(){
  const l=es.filter(e=>(view.type==='all'||e.type===view.type)&&(!y||e.date.startsWith(y))&&(!p||e.pref===p)
   &&has(e.name,n)&&has(e.work,w)&&has(e.venue,v)&&has(e.senko,sk)&&(!a||e.artists.some(x=>has(x,a)))&&(!tg||e.tags.some(x=>has(x,tg)))
   &&(!stt||(stt==='skip')===!att(e))
-  &&(!q||[e.name,e.work,e.part,e.venue,e.room,e.pref,e.seat,e.senko,e.pg,e.hk,e.note,...e.artists,...e.tags].join(' ').toLowerCase().includes(q))).sort(byDesc);
- $('count').textContent=l.length+'件';
- $('list').innerHTML=l.map(card).join('')||empty(es.length?'該当する記録がありません':'まだ記録がありません')}
+  &&(!q||[e.name,e.work,e.part,e.venue,e.room,e.pref,e.seat,e.senko,e.pg,e.hk,e.note,...e.artists,...e.tags].join(' ').toLowerCase().includes(q))).sort(settings.evAsc?(a,b)=>-byDesc(a,b):byDesc);
+ $('count').textContent=l.length+'件';$('sortB').textContent=settings.evAsc?'⇅ 古い順':'⇅ 新しい順';renderYbar();
+ const ys=yList(),yi=ys.indexOf(y);
+ $('list').innerHTML=(l.map(card).join('')||empty(es.length?'該当する記録がありません':'まだ記録がありません'))+(ys.length>1?`<div class="yhint">← 左右にスワイプで${yi<ys.length-1?(ys[yi+1]?ys[yi+1]+'年':'全期間'):''}${yi>0&&yi<ys.length-1?' ／ ':''}${yi>0?(ys[yi-1]?ys[yi-1]+'年':'全期間'):''} →</div>`:'')}
+const yList=()=>['',...uniq(es.map(e=>e.date.slice(0,4))).sort().reverse()];
+function renderYbar(){const y=$('f_y').value,ys=yList(),c={};es.forEach(e=>{const k=e.date.slice(0,4);c[k]=(c[k]||0)+1});
+ $('ybar').innerHTML=ys.map(k=>`<button type="button" role="tab" aria-selected="${k===y}" class="ybtn${k===y?' on':''}" onclick="setYear('${k}')">${k?k+'年':'全期間'}<small>${k?c[k]:es.length}</small></button>`).join('');
+ const on=$('ybar').querySelector('.on');if(on){const b=$('ybar'),x=on.offsetLeft-b.clientWidth/2+on.offsetWidth/2;b.scrollTo({left:x,behavior:'smooth'})}}
+function setYear(y,dir){$('f_y').value=y;settings.evYear=y;saveSettings();renderEvents();const L=$('list');L.classList.remove('sl','sr');if(dir){void L.offsetWidth;L.classList.add(dir>0?'sl':'sr')}}
+function toggleSort(){settings.evAsc=!settings.evAsc;saveSettings();renderEvents()}
+(()=>{let sx=0,sy=0,t0=0;const L=$('list');L.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;t0=Date.now()},{passive:true});
+ L.addEventListener('touchend',e=>{if(!t0)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;t0=0;if(Math.abs(dx)<60||Math.abs(dy)>Math.abs(dx)*0.6)return;
+  const ys=yList(),i=ys.indexOf($('f_y').value),j=dx<0?i+1:i-1;if(j<0||j>=ys.length)return;setYear(ys[j],dx<0?1:-1)},{passive:true})})();
 function renderArtists(){if(!$('alist'))return;
  const q=$('aq').value.toLowerCase(),c={};
  es.filter(e=>e.date<=today()&&att(e)).forEach(e=>e.artists.forEach(a=>{c[a]=c[a]||{n:0,last:''};c[a].n++;if(e.date>c[a].last)c[a].last=e.date}));
@@ -959,7 +980,8 @@ async function importJSON(text){
  try{const j=JSON.parse(String(text).trim());
   if(Array.isArray(j)){for(const o of j){const id='e'+o.id;if(es.some(x=>x.id===id))continue;let mid=null;if(o.seatMap){mid='m'+Date.now()+'_'+added;if(await S.set('map:'+mid,o.seatMap))maps[mid]=o.seatMap;else mid=null}es.push(norm({...o,id,mapId:mid,pref:findPref(o.place||'',true)}));added++}}
   else if(j.events){for(const[k,v]of Object.entries(j.maps||{}))if(!(await S.get('map:'+k))&&await S.set('map:'+k,v))maps[k]=v;for(const[k,v]of Object.entries(j.imgs||{}))if(!(await S.get('img:'+k))&&await S.set('img:'+k,v))imgCache[k]=v;const upd=j.mode==='update';for(const o of j.events){const i=es.findIndex(x=>x.id===String(o.id));if(i>=0){if(!upd)continue;const old=es[i];es[i]=norm({...old,...o,seat:o.seat||old.seat,mapId:o.mapId||old.mapId,point:o.point||old.point,senko:o.senko||old.senko,trGo:o.trGo?.length?o.trGo:old.trGo,trBack:o.trBack?.length?o.trBack:old.trBack,costGo:o.costGo??old.costGo,costBack:o.costBack??old.costBack,tOpen:o.tOpen||old.tOpen,tStart:o.tStart||old.tStart,tEnd:o.tEnd||old.tEnd,imgs:o.imgs?.length?o.imgs:old.imgs,pg:o.pg||old.pg,room:o.room||old.room,tix:o.tix?.length?o.tix:old.tix,hk:o.hk||old.hk,pBase:o.pBase??old.pBase,pSys:o.pSys??old.pSys,pIssue:o.pIssue??old.pIssue,pOther:o.pOther??old.pOther,cHotel:o.cHotel??old.cHotel,cFood:o.cFood??old.cFood,cGoods:o.cGoods??old.cGoods,cOther:o.cOther??old.cOther});added++;continue}if(upd&&!o.name)continue;es.push(norm(o));added++}
-   for(const o of j.venues||[]){if(!o?.name)continue;const ex=venues.find(v=>v.name===o.name);if(ex){let ch=0;for(const k of['pref','cap','sta','memo','ll'])if((ex[k]==null||ex[k]==='')&&o[k]!=null&&o[k]!==''){ex[k]=o[k];ch=1}if(ch)added++;continue}venues.push(normV(o));added++}await saveVenues();
+   for(const r of j.venueRename||[]){if(!r?.from||!r?.to)continue;es.forEach(e=>{if(e.venue===r.from){e.venue=r.to;if(r.room&&!e.room)e.room=r.room;added++}});const fv=venues.find(v=>v.name===r.from);if(fv){const tv=venues.find(v=>v.name===r.to);if(tv){for(const m of fv.maps)if(!tv.maps.some(x=>x.id&&x.id===m.id))tv.maps.push(m);venues=venues.filter(v=>v!==fv)}else fv.name=r.to;if(r.room){const tv2=findVenue(r.to);tv2.maps.forEach(m=>{if(!m.label)m.label=r.room})}}if(settings.geo?.[r.from]&&!settings.geo[r.to])settings.geo[r.to]=settings.geo[r.from]}
+   for(const o of j.venues||[]){if(!o?.name)continue;const ex=venues.find(v=>v.name===o.name);if(ex){let ch=0;for(const m of o.maps||[]){if(!m?.label)continue;const hit=m.id?ex.maps.find(x=>x.id===m.id):ex.maps.find(x=>x.label===m.label);if(hit){if(!hit.label){hit.label=m.label;ch=1}if(hit.cap==null&&m.cap!=null){hit.cap=m.cap;ch=1}}else if(!m.id){ex.maps.push({id:null,label:m.label,cap:m.cap??null});ch=1}}for(const k of['pref','cap','sta','memo','ll'])if((ex[k]==null||ex[k]==='')&&o[k]!=null&&o[k]!==''){ex[k]=o[k];ch=1}if(ch)added++;continue}venues.push(normV(o));added++}await saveVenues();
    for(const o of j.plans||[]){if(plans.some(x=>x.id===String(o.id)))continue;plans.push(normP(o));added++}await savePlans();
    if(j.settings?.geo)settings.geo={...j.settings.geo,...(settings.geo||{})};
    if(j.settings?.homePref&&!settings.homePref){settings.homePref=j.settings.homePref;$('homePref').value=settings.homePref}

@@ -1,0 +1,7 @@
+{"app":"sansen-log","version":1,"mode":"update","events":[],
+ "venueRename":[{"from":"ユナイテッド・シネマ アクアシティお台場 スクリーン1","to":"ユナイテッド・シネマ アクアシティお台場","room":"スクリーン1"}],
+ "venues":[
+  {"name":"グランドシネマサンシャイン池袋","maps":[{"label":"シアター3"}]},
+  {"name":"T・ジョイ京都","maps":[{"label":"シアター7"}]},
+  {"name":"新宿バルト9","pref":"東京都","maps":[{"label":"シアター9"}]}
+ ]}
