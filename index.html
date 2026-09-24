@@ -156,6 +156,12 @@ h3{font-size:12px;color:var(--mut);margin:28px 0 4px;font-weight:600;letter-spac
 .ocrst{font-size:12px;color:var(--ac);margin-top:6px}
 .vthumb{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--sub)}
 .arow .vrow{display:flex;gap:10px;align-items:center;min-width:0}
+.vb{display:inline-block;font-size:10px;border-radius:99px;padding:1px 8px;margin:4px 4px 0 0;font-weight:700;line-height:1.6}
+.vb.map{background:#dff1ec;color:#2d8672}.vb.photo{background:#fcebd9;color:#b86f22}.vb.room{background:#ece6f7;color:#7159ab}.vb.new{background:#fff3cf;color:#a07a12}
+.vb.off{background:transparent;color:#b5b5b5;border:1px dashed #dadada;font-weight:400}
+.roomitem{border:1px solid var(--ln);border-radius:12px;padding:10px;margin-bottom:10px}
+.roomitem .row{align-items:center;flex-wrap:nowrap;margin-bottom:8px}
+.roomitem .rn{flex:1;min-width:0}.roomitem .rc{width:84px;flex:none}
 .tag.oshi::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--oc)}
 .ev-top{display:flex;gap:6px;align-items:center}
 .event-date{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
@@ -352,6 +358,7 @@ details textarea,.ta{width:100%;min-height:100px;margin-top:8px;padding:10px;bor
 <div class="hint">1枚目の画像が一覧に表示されます。画像をタップすると1枚目にできます。</div>
 <span class="fl">開催地（都道府県）</span><select id="pref"></select>
 <span class="fl">会場</span><input id="venue" placeholder="会場名やキーワードで検索（例：フォーラム）" autocomplete="off"><div class="vsug" id="vSug"></div>
+<div id="roomWrap" hidden><span class="fl">ホール・スクリーン</span><div class="chips" id="roomChips"></div></div><input id="room" type="hidden">
 <span class="fl">座席表</span>
 <div class="row"><label class="filebtn">画像を選ぶ<input id="mapFile" type="file" accept="image/*" hidden></label><span id="reuseBox" style="display:contents"></span><button type="button" id="rmMap" class="ghost" style="display:none" onclick="removeMap()">外す</button></div>
 <div id="fmap"></div><div class="hint" id="maphint"></div>
@@ -404,9 +411,10 @@ details textarea,.ta{width:100%;min-height:100px;margin-top:8px;padding:10px;bor
 <span class="fl">会場の外観（写真）</span>
 <div class="imgrow" id="v_photos"></div>
 <label class="filebtn">外観の写真を追加<input id="v_photoFile" type="file" accept="image/*" multiple hidden></label>
-<span class="fl">座席表（階ごと・配置ごとに何枚でも登録できます）</span>
+<span class="fl">ホール・スクリーン／座席表</span>
+<div class="hint" style="margin:0 0 8px">映画館のスクリーンや、同じ建物の中のホール違い・1階2階などは、ここで分けて登録できます。座席表の画像はあとからでも付けられます。</div>
 <div id="v_maps"></div>
-<label class="filebtn">座席表の画像を追加<input id="v_mapFile" type="file" accept="image/*" multiple hidden></label>
+<div class="row"><button type="button" class="ghost" onclick="addRoom()">＋ ホール・スクリーンを追加</button><label class="filebtn">座席表の画像を追加<input id="v_mapFile" type="file" accept="image/*" multiple hidden></label></div>
 <span class="fl">最寄り駅・アクセス</span><input id="v_sta" placeholder="例：有楽町駅から徒歩約2分">
 <button type="button" class="ghost" style="margin-top:8px" onclick="ocrVenue()">座席表の画像から最寄り駅・収容人数を読み取る</button><div class="ocrst" id="v_ocr"></div>
 <span class="fl">メモ</span><textarea id="v_memo" placeholder="コインロッカー、トイレの場所など"></textarea>
@@ -499,7 +507,7 @@ const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${y}.${m}.${dd}
 const fmtMD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+m}月${+dd}日（${WD[new Date(+y,+m-1,+dd).getDay()]}）`};
 
 /* ---------- アイコン（ホーム画面用） ---------- */
-const APP_VER='2026.09.24c';
+const APP_VER='2026.09.24d';
 (function(){if(document.querySelector('link[rel=manifest][href$=".webmanifest"]'))return;try{
  const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
  const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#8196b3');g.addColorStop(1,'#5f7290');x.fillStyle=g;x.fillRect(0,0,180,180);
@@ -555,7 +563,7 @@ const partB=e=>e.part?`<span class="partb">${esc(e.part)}</span>`:'';
 const hasHero=e=>settings.showImg!==false&&!!e.imgs?.[0];
 const isUp=e=>e.date>=today()&&att(e);
 function cdown(e){const[y,m,d]=e.date.split('-'),t=new Date(),n=Math.round((new Date(+y,+m-1,+d)-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/864e5);return n<=0?'<span class="cd today">今日！</span>':`<span class="cd">あと${n}日</span>`}
-function card(e){return `<div class="event${att(e)?'':' skip'}${isUp(e)?' up':''}${hasHero(e)?' hasimg':''}" onclick="detail('${e.id}')">${stripe(evOshi(e))}${hasHero(e)?`<img class="evhero" data-img="${e.imgs[0]}" alt="">`:''}<div class="evb"><div class="ev-top"><span class="event-date">${fmtD(e.date)}</span>${e.tStart?`<span class="etime">${e.tStart}〜</span>`:''}<span class="badge">${esc(e.type)}</span>${isUp(e)?cdown(e):att(e)?'<span class="done-b">✓ 参戦済</span>':''}</div><div class="event-name">${esc(e.name)}${partB(e)}</div>${e.work?`<div class="work">📖 ${esc(e.work)}</div>`:''}${e.pref||e.venue?`<div class="event-meta">${[e.pref,e.venue].filter(Boolean).map(esc).join('・')}</div>`:''}${e.artists.length?`<div class="event-meta">${e.artists.map(esc).join(' / ')}</div>`:''}</div></div>`}
+function card(e){return `<div class="event${att(e)?'':' skip'}${isUp(e)?' up':''}${hasHero(e)?' hasimg':''}" onclick="detail('${e.id}')">${stripe(evOshi(e))}${hasHero(e)?`<img class="evhero" data-img="${e.imgs[0]}" alt="">`:''}<div class="evb"><div class="ev-top"><span class="event-date">${fmtD(e.date)}</span>${e.tStart?`<span class="etime">${e.tStart}〜</span>`:''}<span class="badge">${esc(e.type)}</span>${isUp(e)?cdown(e):att(e)?'<span class="done-b">✓ 参戦済</span>':''}</div><div class="event-name">${esc(e.name)}${partB(e)}</div>${e.work?`<div class="work">📖 ${esc(e.work)}</div>`:''}${e.pref||e.venue?`<div class="event-meta">${[e.pref,e.venue+(e.room?' '+e.room:'')].filter(x=>x.trim()).map(esc).join('・')}</div>`:''}${e.artists.length?`<div class="event-meta">${e.artists.map(esc).join(' / ')}</div>`:''}</div></div>`}
 function renderHome(){
  const y=String(new Date().getFullYear()),t=today(),past=es.filter(e=>e.date<=t),yr=past.filter(att).filter(e=>e.date.startsWith(y));
  $('hy').textContent=y+'年の参戦';$('nE').textContent=yr.length;$('nA').textContent=uniq(yr.flatMap(e=>e.artists)).length;$('nP').textContent=uniq(yr.map(e=>e.pref)).length;
@@ -576,7 +584,7 @@ function renderEvents(){
  const l=es.filter(e=>(view.type==='all'||e.type===view.type)&&(!y||e.date.startsWith(y))&&(!p||e.pref===p)
   &&has(e.name,n)&&has(e.work,w)&&has(e.venue,v)&&has(e.senko,sk)&&(!a||e.artists.some(x=>has(x,a)))&&(!tg||e.tags.some(x=>has(x,tg)))
   &&(!stt||(stt==='skip')===!att(e))
-  &&(!q||[e.name,e.work,e.part,e.venue,e.pref,e.seat,e.senko,e.pg,e.hk,e.note,...e.artists,...e.tags].join(' ').toLowerCase().includes(q))).sort(byDesc);
+  &&(!q||[e.name,e.work,e.part,e.venue,e.room,e.pref,e.seat,e.senko,e.pg,e.hk,e.note,...e.artists,...e.tags].join(' ').toLowerCase().includes(q))).sort(byDesc);
  $('count').textContent=l.length+'件';
  $('list').innerHTML=l.map(card).join('')||empty(es.length?'該当する記録がありません':'まだ記録がありません')}
 function renderArtists(){if(!$('alist'))return;
@@ -757,8 +765,12 @@ let lastImgErr='';
 const imgErr=e=>toast(e&&e.message==='heic'?'HEIC形式の画像は読み込めませんでした（スクショで試してください）':`画像を読み込めませんでした［${e?.ftype||'?'} / ${e?.detail||e?.message||'不明'}］`,6000);
 $('mapFile').onchange=async function(){const f=this.files[0];if(!f)return;try{form.mapData=await compress(f);form.mapId=null;form.point=null;renderFormMap()}catch(e){imgErr(e)}this.value=''};
 const venueMap=v=>v?es.filter(x=>x.venue===v&&x.mapId).sort(byDesc)[0]?.mapId:null;
-function venueMapsFor(v){const out=[],reg=findVenue(v);if(reg)reg.maps.forEach(m=>out.push({id:m.id,label:m.label||'座席表'}));const last=venueMap(v);if(last&&!out.some(o=>o.id===last))out.push({id:last,label:'前回の記録'});return out}
-function updateReuse(){const ms=venueMapsFor($('venue').value.trim()).filter(m=>m.id!==form.mapId);$('reuseBox').innerHTML=ms.map(m=>`<button type="button" class="ghost" onclick="reuseMap('${m.id}')">座席表：${esc(m.label)}を使う</button>`).join('')}
+function venueMapsFor(v){const out=[],reg=findVenue(v);if(reg)reg.maps.filter(m=>m.id).forEach(m=>out.push({id:m.id,label:m.label||'座席表'}));const last=venueMap(v);if(last&&!out.some(o=>o.id===last))out.push({id:last,label:'前回の記録'});return out}
+function renderRooms(){const reg=findVenue($('venue').value.trim()),rooms=(reg?.maps||[]).filter(m=>m.label),cur=$('room').value;
+ $('roomWrap').hidden=!rooms.length;
+ $('roomChips').innerHTML=rooms.map((m,i)=>`<button type="button" class="chipb${cur===m.label?' on':''}" data-i="${i}">${esc(m.label)}${m.id?' 🗺':''}</button>`).join('');
+ $('roomChips').querySelectorAll('button').forEach(b=>b.onclick=async()=>{const m=rooms[+b.dataset.i];if($('room').value===m.label){$('room').value=''}else{$('room').value=m.label;if(m.id&&form.mapId!==m.id){await reuseMap(m.id);toast(m.label+'の座席表を入れました',2500)}}renderRooms()})}
+function updateReuse(){renderRooms();const ms=venueMapsFor($('venue').value.trim()).filter(m=>m.id!==form.mapId);$('reuseBox').innerHTML=ms.map(m=>`<button type="button" class="ghost" onclick="reuseMap('${m.id}')">座席表：${esc(m.label)}を使う</button>`).join('')}
 async function reuseMap(id){if(!id)return;form.mapData=await getMap(id);form.mapId=id;form.point=null;renderFormMap()}
 function removeMap(){Object.assign(form,{mapId:null,mapData:null,point:null});renderFormMap()}
 $('venue').addEventListener('input',()=>{updateReuse();renderVSug()});
@@ -769,7 +781,7 @@ function renderVSug(){const q=nz($('venue').value);if(!q){$('vSug').innerHTML=''
  $('vSug').innerHTML=names.slice(0,6).map(n=>{const v=findVenue(n);return `<button type="button" data-v="${esc(n)}"><span>${esc(n)}</span><small class="${v?'reg':''}">${v?(v.maps.length?'座席表あり':'登録済み'):(es.find(e=>e.venue===n)?.pref||'')}</small></button>`}).join('');
  $('vSug').querySelectorAll('button').forEach(b=>b.onclick=()=>pickVenue(b.dataset.v))}
 async function pickVenue(n){$('venue').value=n;$('vSug').innerHTML='';const pp=findVenue(n)?.pref||es.find(x=>x.venue===n&&x.pref)?.pref;if(pp)$('pref').value=pp;
- if(!form.mapData){const m=venueMapsFor(n)[0];if(m){await reuseMap(m.id);toast('座席表を入れました（観た位置は座席表をタップ）',3000)}}updateReuse()}
+ const rooms=(findVenue(n)?.maps||[]).filter(m=>m.label);if(rooms.length>1){$('room').value='';toast('ホール・スクリーンを選んでください',2500)}else if(!form.mapData){const m=venueMapsFor(n)[0];if(m){if(rooms.length===1)$('room').value=rooms[0].label;await reuseMap(m.id);toast('座席表を入れました（観た位置は座席表をタップ）',3000)}}updateReuse()}
 $('venue').addEventListener('blur',()=>setTimeout(()=>{$('vSug').innerHTML=''},250));
 $('venue').addEventListener('change',()=>{const v=$('venue').value.trim();if(!$('pref').value){const pp=findVenue(v)?.pref||es.find(x=>x.venue===v&&x.pref)?.pref;if(pp)$('pref').value=pp}updateReuse()});
 
@@ -830,7 +842,7 @@ async function openForm(id,date,copyId){
  form={mapId:e?.mapId||null,mapData:e?.mapId?await getMap(e.mapId):null,point:e?.point||null,imgs:[]};renderFormMap();
  for(const id of e?.imgs||[]){const d=await getImg(id);if(d)form.imgs.push({id,data:d})}renderFormImgs();
  for(const k of['pBase','pSys','pIssue','pOther','cHotel','cFood','cGoods','cOther'])$(k).value=e?.[k]??'';calcTotal();
- $('pg').value=e?.pg||'';$('hk').value=e?.hk||'';renderPicks();
+ $('room').value=e?.room||'';$('pg').value=e?.pg||'';$('hk').value=e?.hk||'';renderPicks();
  $('pgDL').innerHTML=uniq([...PGS,...es.map(x=>x.pg)]).map(v=>`<option value="${esc(v)}">`).join('');$('hkDL').innerHTML=uniq([...HKS,...es.map(x=>x.hk)]).map(v=>`<option value="${esc(v)}">`).join('');
  $('ftitle').textContent=id?'記録を編集':copyId?'記録を複製':'参戦記録を追加';if(copyId)toast('公演回などを変えて保存してください');show('add')}
 let fState={st:'go',go:[],back:[]};
@@ -852,7 +864,7 @@ async function submitForm(ev){
   else{const mid='m'+Date.now();if(await S.set('map:'+mid,form.mapData)){maps[mid]=form.mapData;e.mapId=mid}else toast('座席表の保存に失敗しました')}
   e.point=e.mapId?form.point:null}
  for(const k of['pBase','pSys','pIssue','pOther','cHotel','cFood','cGoods','cOther'])e[k]=$(k).value===''?null:+$(k).value;
- e.pg=$('pg').value.trim();e.hk=$('hk').value.trim();
+ e.room=$('room').value.trim();e.pg=$('pg').value.trim();e.hk=$('hk').value.trim();
  e.imgs=[];for(const im of form.imgs){if(!im.id){const id='i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);if(await S.set('img:'+id,im.data)){imgCache[id]=im.data;im.id=id}else{toast('画像の保存に失敗しました');continue}}e.imgs.push(im.id)}
  const idx=es.findIndex(x=>x.id===e.id),old=idx>=0?es[idx]:null;
  if(old)es[idx]=e;else es.push(e);
@@ -872,7 +884,7 @@ async function detail(id){
  ${att(e)?'':'<div class="drow"><span class="badge">行かない（落選・見送り）</span></div>'}
  <div class="drow"><div class="label">日付</div>${fmtD(e.date)}${[['開場',e.tOpen],['開演',e.tStart],['終演',e.tEnd]].filter(x=>x[1]).map(x=>`<span class="etime" style="margin-left:10px">${x[0]} ${x[1]}</span>`).join('')}</div>
  ${e.senko||e.pg||e.hk?`<div class="drow"><div class="label">チケット</div>${[['先行',e.senko],['入手元',e.pg],['発券',e.hk]].filter(x=>x[1]).map(x=>`<div class="prow"><span class="mut">${x[0]}</span><span>${esc(x[1])}</span></div>`).join('')}</div>`:''}
- ${e.venue||e.pref?`<div class="drow"><div class="label">会場</div>${e.venue?`<span class="link" data-k="v" data-v="${esc(e.venue)}" onclick="fb(this)">${esc(e.venue)}</span>`:''}${e.venue&&!/某所/.test(e.venue)?`<span class="link" style="font-size:12px" onclick="openVenue('${encodeURIComponent(e.venue)}')">会場情報 ›</span>`:''}${findVenue(e.venue)?.sta?`<div class="event-meta">🚉 ${esc(findVenue(e.venue).sta)}</div>`:''}${e.pref?`<span class="tag" data-k="p" data-v="${esc(e.pref)}" onclick="fb(this)">${esc(e.pref)}</span>`:''}</div>`:''}
+ ${e.venue||e.pref?`<div class="drow"><div class="label">会場</div>${e.venue?`<span class="link" data-k="v" data-v="${esc(e.venue)}" onclick="fb(this)">${esc(e.venue)}</span>${e.room?`<span style="margin-right:6px">${esc(e.room)}</span>`:''}`:''}${e.venue&&!/某所/.test(e.venue)?`<span class="link" style="font-size:12px" onclick="openVenue('${encodeURIComponent(e.venue)}')">会場情報 ›</span>`:''}${findVenue(e.venue)?.sta?`<div class="event-meta">🚉 ${esc(findVenue(e.venue).sta)}</div>`:''}${e.pref?`<span class="tag" data-k="p" data-v="${esc(e.pref)}" onclick="fb(this)">${esc(e.pref)}</span>`:''}</div>`:''}
  ${e.artists.length?`<div class="drow"><div class="label">出演者</div>${e.artists.map(a=>{const n=nth(a);return `<span class="tag${oshiColor(a)?' oshi':''}" style="--oc:${oshiColor(a)||''}" data-k="a" data-v="${esc(a)}" onclick="fb(this)">${esc(a)}${n?`<small>${n}回目</small>`:''}</span>`}).join('')}</div>`:''}
  ${tTotal(e)?`<div class="drow"><div class="label">チケット代</div>${[['定価',e.pBase],['システム利用料',e.pSys],['発券手数料',e.pIssue],['その他',e.pOther]].filter(x=>x[1]!=null&&x[1]!=='').map(x=>`<div class="prow"><span>${x[0]}</span><span>${yen(x[1])}</span></div>`).join('')}<div class="prow t"><span>合計</span><span>${yen(tTotal(e))}</span></div></div>`:''}
  <div class="drow"><div class="label">座席</div>${esc(e.seat)||'<span class="mut">未登録</span>'}${md?mapHTML(md,e.point):''}</div>
@@ -910,13 +922,13 @@ async function exportData(){
  const name=`sansen-log-${today()}.json`,file=new File([json],name,{type:'application/json'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'参戦ログ バックアップ'});return}catch(e){if(e.name==='AbortError')return}}
  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('書き出しました')}
-const norm=o=>({id:String(o.id),name:o.name||'',work:o.work||'',part:o.part||'',status:o.status==='skip'?'skip':'go',date:o.date||'',tOpen:o.tOpen||'',tStart:o.tStart||'',tEnd:o.tEnd||'',type:TYPES.includes(o.type)?o.type:'その他',venue:o.venue||'',pref:o.pref||'',artists:o.artists||[],senko:o.senko||'',seat:o.seat||'',trGo:o.trGo||[],trBack:o.trBack||[],costGo:o.costGo??null,costBack:o.costBack??null,mapId:o.mapId||null,point:o.point||null,url:o.url||'',tags:o.tags||[],note:o.note||'',imgs:o.imgs||[],pg:o.pg||'',hk:o.hk||'',pBase:o.pBase??null,pSys:o.pSys??null,pIssue:o.pIssue??null,pOther:o.pOther??null,cHotel:o.cHotel??null,cFood:o.cFood??null,cGoods:o.cGoods??null,cOther:o.cOther??null});
+const norm=o=>({id:String(o.id),room:o.room||'',name:o.name||'',work:o.work||'',part:o.part||'',status:o.status==='skip'?'skip':'go',date:o.date||'',tOpen:o.tOpen||'',tStart:o.tStart||'',tEnd:o.tEnd||'',type:TYPES.includes(o.type)?o.type:'その他',venue:o.venue||'',pref:o.pref||'',artists:o.artists||[],senko:o.senko||'',seat:o.seat||'',trGo:o.trGo||[],trBack:o.trBack||[],costGo:o.costGo??null,costBack:o.costBack??null,mapId:o.mapId||null,point:o.point||null,url:o.url||'',tags:o.tags||[],note:o.note||'',imgs:o.imgs||[],pg:o.pg||'',hk:o.hk||'',pBase:o.pBase??null,pSys:o.pSys??null,pIssue:o.pIssue??null,pOther:o.pOther??null,cHotel:o.cHotel??null,cFood:o.cFood??null,cGoods:o.cGoods??null,cOther:o.cOther??null});
 const normP=o=>({id:String(o.id),date:o.date||'',time:o.time||'',kind:PK[o.kind]?o.kind:'その他',title:o.title||'',eventId:o.eventId||'',note:o.note||'',done:!!o.done});
 async function importJSON(text){
  let added=0;
  try{const j=JSON.parse(String(text).trim());
   if(Array.isArray(j)){for(const o of j){const id='e'+o.id;if(es.some(x=>x.id===id))continue;let mid=null;if(o.seatMap){mid='m'+Date.now()+'_'+added;if(await S.set('map:'+mid,o.seatMap))maps[mid]=o.seatMap;else mid=null}es.push(norm({...o,id,mapId:mid,pref:findPref(o.place||'',true)}));added++}}
-  else if(j.events){for(const[k,v]of Object.entries(j.maps||{}))if(!(await S.get('map:'+k))&&await S.set('map:'+k,v))maps[k]=v;for(const[k,v]of Object.entries(j.imgs||{}))if(!(await S.get('img:'+k))&&await S.set('img:'+k,v))imgCache[k]=v;const upd=j.mode==='update';for(const o of j.events){const i=es.findIndex(x=>x.id===String(o.id));if(i>=0){if(!upd)continue;const old=es[i];es[i]=norm({...old,...o,seat:o.seat||old.seat,mapId:o.mapId||old.mapId,point:o.point||old.point,senko:o.senko||old.senko,trGo:o.trGo?.length?o.trGo:old.trGo,trBack:o.trBack?.length?o.trBack:old.trBack,costGo:o.costGo??old.costGo,costBack:o.costBack??old.costBack,tOpen:o.tOpen||old.tOpen,tStart:o.tStart||old.tStart,tEnd:o.tEnd||old.tEnd,imgs:o.imgs?.length?o.imgs:old.imgs,pg:o.pg||old.pg,hk:o.hk||old.hk,pBase:o.pBase??old.pBase,pSys:o.pSys??old.pSys,pIssue:o.pIssue??old.pIssue,pOther:o.pOther??old.pOther,cHotel:o.cHotel??old.cHotel,cFood:o.cFood??old.cFood,cGoods:o.cGoods??old.cGoods,cOther:o.cOther??old.cOther});added++;continue}es.push(norm(o));added++}
+  else if(j.events){for(const[k,v]of Object.entries(j.maps||{}))if(!(await S.get('map:'+k))&&await S.set('map:'+k,v))maps[k]=v;for(const[k,v]of Object.entries(j.imgs||{}))if(!(await S.get('img:'+k))&&await S.set('img:'+k,v))imgCache[k]=v;const upd=j.mode==='update';for(const o of j.events){const i=es.findIndex(x=>x.id===String(o.id));if(i>=0){if(!upd)continue;const old=es[i];es[i]=norm({...old,...o,seat:o.seat||old.seat,mapId:o.mapId||old.mapId,point:o.point||old.point,senko:o.senko||old.senko,trGo:o.trGo?.length?o.trGo:old.trGo,trBack:o.trBack?.length?o.trBack:old.trBack,costGo:o.costGo??old.costGo,costBack:o.costBack??old.costBack,tOpen:o.tOpen||old.tOpen,tStart:o.tStart||old.tStart,tEnd:o.tEnd||old.tEnd,imgs:o.imgs?.length?o.imgs:old.imgs,pg:o.pg||old.pg,room:o.room||old.room,hk:o.hk||old.hk,pBase:o.pBase??old.pBase,pSys:o.pSys??old.pSys,pIssue:o.pIssue??old.pIssue,pOther:o.pOther??old.pOther,cHotel:o.cHotel??old.cHotel,cFood:o.cFood??old.cFood,cGoods:o.cGoods??old.cGoods,cOther:o.cOther??old.cOther});added++;continue}es.push(norm(o));added++}
    for(const o of j.venues||[]){if(!o?.name)continue;const ex=venues.find(v=>v.name===o.name);if(ex){let ch=0;for(const k of['pref','cap','sta','memo','ll'])if((ex[k]==null||ex[k]==='')&&o[k]!=null&&o[k]!==''){ex[k]=o[k];ch=1}if(ch)added++;continue}venues.push(normV(o));added++}await saveVenues();
    for(const o of j.plans||[]){if(plans.some(x=>x.id===String(o.id)))continue;plans.push(normP(o));added++}await savePlans();
    if(j.settings?.geo)settings.geo={...j.settings.geo,...(settings.geo||{})};
@@ -1050,19 +1062,25 @@ async function tintImg(src){
 let venues=[],vform=null;
 const saveVenues=()=>S.set('venues-v1',JSON.stringify(venues));
 const findVenue=n=>n?venues.find(v=>v.name===n):null;
-const normV=o=>({id:String(o.id||('v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5))),name:o.name||'',pref:o.pref||'',cap:o.cap??null,memo:o.memo||'',sta:o.sta||'',photos:o.photos||[],maps:(o.maps||[]).filter(m=>m&&m.id).map(m=>({id:m.id,label:m.label||''})),ll:o.ll||null});
+const normV=o=>({id:String(o.id||('v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5))),name:o.name||'',pref:o.pref||'',cap:o.cap??null,memo:o.memo||'',sta:o.sta||'',photos:o.photos||[],maps:(o.maps||[]).filter(m=>m&&(m.id||m.label)).map(m=>({id:m.id||null,label:m.label||'',cap:m.cap??null})),ll:o.ll||null});
 function setSeg(t){document.querySelectorAll('#setSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.setp').forEach(p=>p.hidden=p.dataset.t!==t)}
+let vFilter='all';
+function setVF(k){vFilter=k;renderVenues()}
 function renderVenues(){
  const q=$('vq').value.trim().toLowerCase(),names=uniq([...venues.map(v=>v.name),...es.map(e=>e.venue)]).filter(n=>n&&!/某所/.test(n));
- const rows=names.map(n=>{const v=findVenue(n),ev=es.filter(e=>e.venue===n);return{n,v,c:ev.filter(att).length,pref:v?.pref||ev.find(e=>e.pref)?.pref||''}}).filter(x=>!q||x.n.toLowerCase().includes(q)).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n,'ja'));
- $('vlistS').innerHTML=`<div class="hint" style="margin:10px 0 0">${rows.length}会場（登録済み ${rows.filter(x=>x.v).length}）</div>`+rows.map(x=>`<div class="arow" onclick="openVenue('${encodeURIComponent(x.n)}')"><div class="vrow">${x.v?.photos?.[0]?`<img class="vthumb" data-img="${x.v.photos[0]}" alt="">`:''}<div style="min-width:0"><b>${esc(x.n)}</b><div class="event-meta">${[x.pref,x.v?.cap?Number(x.v.cap).toLocaleString()+'席':'',x.v?.sta||'',x.v?.maps?.length?`座席表${x.v.maps.length}枚`:''].filter(Boolean).map(esc).join('・')}${x.v?'':'<span style="color:#b08a3a">　未登録</span>'}</div></div></div><div class="n">${x.c}<small>回</small></div></div>`).join('')}
+ let rows=names.map(n=>{const v=findVenue(n),ev=es.filter(e=>e.venue===n),nm=v?v.maps.filter(m=>m.id).length:0,nr=v?v.maps.filter(m=>m.label).length:0;return{n,v,c:ev.filter(att).length,pref:v?.pref||ev.find(e=>e.pref)?.pref||'',nm,nr,ph:v?.photos?.length||0}});
+ const cntF={all:rows.length,nomap:rows.filter(x=>!x.nm).length,nophoto:rows.filter(x=>!x.ph).length};
+ rows=rows.filter(x=>(!q||x.n.toLowerCase().includes(q))&&(vFilter==='all'||(vFilter==='nomap'&&!x.nm)||(vFilter==='nophoto'&&!x.ph))).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n,'ja'));
+ const badges=x=>(x.nm?`<span class="vb map">座席表${x.nm>1?' '+x.nm:''}</span>`:'<span class="vb off">座席表なし</span>')+(x.ph?`<span class="vb photo">外観</span>`:'<span class="vb off">外観なし</span>')+(x.nr>1?`<span class="vb room">ホール・スクリーン ${x.nr}</span>`:'')+(x.v?'':'<span class="vb new">未登録</span>');
+ $('vlistS').innerHTML=`<div class="filters" style="margin-top:10px">${[['all','すべて'],['nomap','座席表なし'],['nophoto','外観なし']].map(([k,l])=>`<button class="filter${vFilter===k?' active':''}" onclick="setVF('${k}')">${l} ${cntF[k]}</button>`).join('')}</div>`
+  +rows.map(x=>`<div class="arow" onclick="openVenue('${encodeURIComponent(x.n)}')"><div class="vrow">${x.v?.photos?.[0]?`<img class="vthumb" data-img="${x.v.photos[0]}" alt="">`:''}<div style="min-width:0"><b>${esc(x.n)}</b><div class="event-meta">${[x.pref,x.v?.cap?Number(x.v.cap).toLocaleString()+'席':'',x.v?.sta||''].filter(Boolean).map(esc).join('・')}</div><div>${badges(x)}</div></div></div><div class="n">${x.c}<small>回</small></div></div>`).join('')||empty('該当する会場がありません')}
 async function openVenue(enc){
  const name=enc?decodeURIComponent(enc):'',v=findVenue(name);
  vform={orig:v?v.name:name,reg:!!v,id:v?.id||null,maps:[],photos:[]};
  for(const id of v?.photos||[]){const d=await getImg(id);if(d)vform.photos.push({id,data:d})}
  $('vtitle').textContent=v?'会場を編集':name?'会場を登録':'会場を追加';
  $('v_name').value=name;$('v_pref').value=v?.pref||es.find(e=>e.venue===name&&e.pref)?.pref||'';$('v_cap').value=v?.cap??'';$('v_sta').value=v?.sta||'';$('v_ocr').textContent='';$('v_memo').value=v?.memo||'';
- if(v)for(const m of v.maps){const d=await getMap(m.id);if(d)vform.maps.push({id:m.id,label:m.label,data:d})}
+ if(v)for(const m of v.maps){const d=m.id?await getMap(m.id):null;vform.maps.push({id:d?m.id:null,label:m.label,cap:m.cap??null,data:d})}
  else{for(const id of uniq(es.filter(e=>e.venue===name&&e.mapId).sort(byDesc).map(e=>e.mapId)).slice(0,3)){const d=await getMap(id);if(d)vform.maps.push({id,label:'',data:d})}}
  $('v_del').style.display=v?'':'none';$('v_del').textContent='この会場の登録を削除';delete $('v_del').dataset.c;
  renderVMaps();renderVPhotos();renderDist(name);
@@ -1073,26 +1091,29 @@ function renderVPhotos(){
  $('v_photos').querySelectorAll('button').forEach(b=>b.onclick=()=>{vform.photos.splice(+b.dataset.x,1);renderVPhotos()})}
 $('v_photoFile').onchange=async function(){const fs=[...this.files];this.value='';for(const f of fs){try{vform.photos.push({id:null,data:await compress(f)});renderVPhotos()}catch(e){imgErr(e)}}};
 function renderVMaps(){
- $('v_maps').innerHTML=vform.maps.map((m,i)=>`<div class="vmapitem"><div class="row"><input data-l="${i}" value="${esc(m.label)}" placeholder="名前（例：1階、2階、センターステージ）"><button type="button" class="ghost danger" data-x="${i}">外す</button></div>${mapHTML(m.data,null)}</div>`).join('')||'<div class="hint" style="margin:0 0 8px">まだ座席表がありません</div>';
+ $('v_maps').innerHTML=vform.maps.map((m,i)=>`<div class="roomitem"><div class="row"><input class="rn" data-l="${i}" value="${esc(m.label||'')}" placeholder="名前（例：スクリーン10、ホールA、1階）"><input class="rc" data-c="${i}" type="number" inputmode="numeric" min="0" value="${m.cap??''}" placeholder="席数"><button type="button" class="ghost danger" data-x="${i}">外す</button></div>${m.data?mapHTML(m.data,null):`<label class="filebtn">このホールの座席表を付ける<input type="file" accept="image/*" hidden data-f="${i}"></label>`}</div>`).join('')||'<div class="hint" style="margin:0 0 8px">まだ登録がありません</div>';
  $('v_maps').querySelectorAll('input[data-l]').forEach(x=>x.oninput=()=>{vform.maps[+x.dataset.l].label=x.value});
+ $('v_maps').querySelectorAll('input[data-c]').forEach(x=>x.oninput=()=>{vform.maps[+x.dataset.c].cap=x.value===''?null:+x.value});
+ $('v_maps').querySelectorAll('input[data-f]').forEach(x=>x.onchange=async function(){const f=this.files[0];if(!f)return;try{const m=vform.maps[+this.dataset.f];m.data=await compress(f);m.id=null;renderVMaps()}catch(e){imgErr(e)}});
  $('v_maps').querySelectorAll('button[data-x]').forEach(b=>b.onclick=()=>{vform.maps.splice(+b.dataset.x,1);renderVMaps()})}
-$('v_mapFile').onchange=async function(){const fs=[...this.files];this.value='';for(const f of fs){try{vform.maps.push({id:null,label:'',data:await compress(f)});renderVMaps()}catch(e){imgErr(e)}}if(vform.maps.length&&(!$('v_cap').value||!$('v_sta').value))ocrVenue()};
+function addRoom(){vform.maps.push({id:null,label:'',cap:null,data:null});renderVMaps();const l=$('v_maps').querySelectorAll('input.rn');l[l.length-1]?.focus()}
+$('v_mapFile').onchange=async function(){const fs=[...this.files];this.value='';for(const f of fs){try{vform.maps.push({id:null,label:'',cap:null,data:await compress(f)});renderVMaps()}catch(e){imgErr(e)}}if(vform.maps.length&&(!$('v_cap').value||!$('v_sta').value))ocrVenue()};
 function closeVenue(){show('data');setSeg('venue')}
 async function saveVenue(){
  const name=$('v_name').value.trim();if(!name){toast('会場名を入れてください');return}
  if(name!==vform.orig&&findVenue(name)){toast('同じ名前の会場がすでに登録されています');return}
  const old=vform.reg?findVenue(vform.orig):null,vm=[];
- for(const m of vform.maps){if(!m.id){const id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);if(await S.set('map:'+id,m.data)){maps[id]=m.data;m.id=id}else{toast('座席表の保存に失敗しました');continue}}vm.push({id:m.id,label:m.label.trim()})}
+ for(const m of vform.maps){if(!m.id&&m.data){const id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);if(await S.set('map:'+id,m.data)){maps[id]=m.data;m.id=id}else{toast('座席表の保存に失敗しました')}}if(!m.id&&!(m.label||'').trim())continue;vm.push({id:m.id||null,label:(m.label||'').trim(),cap:m.cap??null})}
  const ph=[];for(const x of vform.photos){if(!x.id){const id='i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);if(await S.set('img:'+id,x.data)){imgCache[id]=x.data;x.id=id}else continue}ph.push(x.id)}
  for(const id of old?.photos||[])if(!ph.includes(id)&&!es.some(e=>(e.imgs||[]).includes(id))){await S.del('img:'+id);delete imgCache[id]}
  const v=normV({id:vform.id,photos:ph,name,pref:$('v_pref').value,cap:$('v_cap').value===''?null:+$('v_cap').value,memo:$('v_memo').value.trim(),sta:$('v_sta').value.trim(),maps:vm,ll:old?.ll||null});
  if(old)venues[venues.indexOf(old)]=v;else venues.push(v);
  let moved=0;if(vform.orig&&name!==vform.orig){es.forEach(e=>{if(e.venue===vform.orig){e.venue=name;moved++}});if(moved)await saveEvents();if(settings.geo?.[vform.orig]&&!settings.geo[name]){settings.geo[name]=settings.geo[vform.orig];saveSettings()}}
- await saveVenues();for(const m of old?.maps||[])if(!vm.some(x=>x.id===m.id))await cleanupMap(m.id);
+ await saveVenues();for(const m of old?.maps||[])if(m.id&&!vm.some(x=>x.id===m.id))await cleanupMap(m.id);
  geocode(name);toast(moved?`保存しました（${moved}件の記録の会場名も変更）`:'保存しました',3000);openVenue(encodeURIComponent(name))}
 async function delVenue(b){
  if(!b.dataset.c){b.dataset.c=1;b.textContent='もう一度押すと削除（記録は消えません）';setTimeout(()=>{if(b.isConnected){delete b.dataset.c;b.textContent='この会場の登録を削除'}},3000);return}
- const v=findVenue(vform.orig);if(!v)return;venues=venues.filter(x=>x!==v);await saveVenues();for(const m of v.maps)await cleanupMap(m.id);toast('削除しました');closeVenue()}
+ const v=findVenue(vform.orig);if(!v)return;venues=venues.filter(x=>x!==v);await saveVenues();for(const m of v.maps)if(m.id)await cleanupMap(m.id);toast('削除しました');closeVenue()}
 function renderEnv(){
  const sa=navigator.standalone||matchMedia('(display-mode: standalone)').matches,rows=[
   ['データの保存',storeOK?'<b class="ok">できます</b>':'<b class="ng">できません</b>'],
@@ -1109,7 +1130,7 @@ function renderEnv(){
 function renderDist(name){
  const box=$('v_dist');if(!name||!vform){box.innerHTML='';return}
  let h='';
- for(const m of vform.maps){if(!m.id)continue;
+ for(const m of vform.maps){if(!m.id||!m.data)continue;
   const ev=es.filter(e=>e.mapId===m.id&&e.point&&att(e)).sort(byAsc);if(!ev.length)continue;
   const col=e=>evOshi(e)[0]||'var(--ac)';
   const dots=ev.map((e,i)=>`<div class="sdot" data-i="${i}" style="left:${e.point.x}%;top:${e.point.y}%;--c:${col(e)}">${i+1}</div>`).join('');
