@@ -10,7 +10,6 @@
 <title>参戦ログ</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" href="icon-192.png">
 <style>
 :root{--font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;--ac-s:rgba(111,130,156,.35);--ac:#6f829c;--ac-l:#eef1f6;--ln:#eeeeee;--mut:#8b8b8b;--sub:#f6f6f6;--st:env(safe-area-inset-top);--sb:env(safe-area-inset-bottom)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -63,9 +62,8 @@ h3{font-size:12px;color:var(--mut);margin:28px 0 4px;font-weight:600;letter-spac
 .tri{display:inline-flex;align-items:center;gap:3px;background:var(--tc);color:#fff;border-radius:99px;padding:2px 9px 2px 5px;font-size:11px;margin:2px 4px 2px 0}
 .tri svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .event.skip{opacity:.4}
-.event.up{background:var(--ac-l);border-radius:14px;padding:12px 12px 12px 20px;margin:8px 0;border-bottom:0}
+.event.up{background:#fff;border:2px solid var(--ac);border-radius:14px;padding:12px 12px 12px 20px;margin:8px 0}
 .event.up .os{left:9px;top:14px;bottom:14px}
-.event.up .badge{background:#fff}
 .cd{font-size:11px;font-weight:700;color:#fff;background:var(--ac);border-radius:99px;padding:1px 8px;margin-left:auto;white-space:nowrap}
 .cd.today{background:#e2575a}
 .done-b{font-size:10px;color:#4f8f6a;background:#e8f3ec;border-radius:99px;padding:1px 7px}
@@ -162,6 +160,17 @@ h3{font-size:12px;color:var(--mut);margin:28px 0 4px;font-weight:600;letter-spac
 .roomitem{border:1px solid var(--ln);border-radius:12px;padding:10px;margin-bottom:10px}
 .roomitem .row{align-items:center;flex-wrap:nowrap;margin-bottom:8px}
 .roomitem .rn{flex:1;min-width:0}.roomitem .rc{width:84px;flex:none}
+.tapp{border:1.5px solid var(--ln);border-left:4px solid var(--rc);border-radius:12px;padding:10px;margin:10px 0;display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}.tapp>*,.tseat>*{min-width:0}.tseat{grid-template-columns:minmax(0,1fr)}.tapp .row>button{flex:none}.tapp .chips{flex-wrap:wrap}
+.tapp .row{align-items:center;flex-wrap:nowrap}.tapp input{flex:1;min-width:0;border:1px solid var(--ln);border-radius:9px;padding:8px 10px;background:#fff;outline:none}
+.tapp .chipb.res.on{background:var(--rc);border-color:var(--rc)}
+.tseat{border-top:1px dashed var(--ln);padding-top:8px;display:grid;gap:6px}
+.tseat .sn{flex:none;min-width:24px;height:24px;border-radius:12px;background:var(--c);color:#fff;font-size:12px;display:grid;place-items:center}
+.tseat .ghost.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.chipb.sm{padding:4px 11px;min-height:30px;font-size:12px}
+.chipb.sm.on{background:var(--uc);border-color:var(--uc)}
+.tapp .who{flex:1;min-width:110px}
+.txbtn{display:flex;justify-content:space-between;align-items:center;width:100%;border:1px solid var(--ln);background:#fff;border-radius:11px;padding:11px 12px;margin-top:6px;font-size:13px}
+.txbtn b{color:var(--ac)}
 .tag.oshi::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--oc)}
 .ev-top{display:flex;gap:6px;align-items:center}
 .event-date{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
@@ -402,6 +411,20 @@ details textarea,.ta{width:100%;min-height:100px;margin-top:8px;padding:10px;bor
 
 <section id="detail" class="page"><button class="back" onclick="show(lastTab)">‹ 戻る</button><div id="detailBox"></div></section>
 
+<section id="tix" class="page">
+<button class="back" onclick="closeTix()">‹ 記録に戻る</button>
+<div class="label" style="margin-top:4px">申込・チケット管理</div>
+<h2 id="tx_title" style="margin:2px 0 2px;font-size:17px"></h2>
+<div class="event-meta" id="tx_sub"></div>
+<div class="stats" id="tx_sum"></div>
+<div id="tx_map"></div>
+<div class="legend" id="tx_leg"></div>
+<div class="hint" id="tx_hint"></div>
+<div id="tx_list"></div>
+<button type="button" class="secondary" onclick="addApp()">＋ 申込を追加</button>
+<datalist id="sDL2"></datalist><datalist id="pgDL2"></datalist>
+</section>
+
 <section id="venue" class="page">
 <button class="back" onclick="closeVenue()">‹ 会場一覧</button>
 <h2 id="vtitle">会場を登録</h2>
@@ -507,7 +530,7 @@ const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${y}.${m}.${dd}
 const fmtMD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+m}月${+dd}日（${WD[new Date(+y,+m-1,+dd).getDay()]}）`};
 
 /* ---------- アイコン（ホーム画面用） ---------- */
-const APP_VER='2026.09.24d';
+const APP_VER='2026.09.24e';
 (function(){if(document.querySelector('link[rel=manifest][href$=".webmanifest"]'))return;try{
  const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
  const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#8196b3');g.addColorStop(1,'#5f7290');x.fillStyle=g;x.fillRect(0,0,180,180);
@@ -665,6 +688,11 @@ const AV=[['trend','推移','<path d="M4 18l5-6 4 3 7-9"/><path d="M4 21h16"/>']
  ['ticket','チケット','<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"/><path d="M14 7v2M14 11v2M14 15v2"/>'],
  ['tr','交通','<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M8.5 21l1.5-4M15.5 21l-1.5-4"/><circle cx="8.5" cy="13.5" r=".8"/><circle cx="15.5" cy="13.5" r=".8"/>']];
 const h4=t=>`<h4 style="font-size:12px;margin:16px 0 0;color:var(--mut)">${t}</h4>`;
+function winRate(y){const t=today(),E=es.filter(e=>e.date<=t&&(y==='all'||e.date.startsWith(y))),m={};
+ for(const e of E)for(const a of e.tix||[]){if(a.result==='pending')continue;const k=a.senko||'（先行名なし）';m[k]=m[k]||{n:0,w:0,s:0};m[k].n++;if(a.result==='win'){m[k].w++;m[k].s+=a.seats.length}}
+ const rows=Object.entries(m).sort((a,b)=>b[1].n-a[1].n);if(!rows.length)return h4('先行ごとの当選率')+'<div class="hint">記録の詳細画面の「申込・チケット」で当選・落選を入れると、ここに当選率が出ます</div>';
+ const N=rows.reduce((s,x)=>s+x[1].n,0),W=rows.reduce((s,x)=>s+x[1].w,0);
+ return h4(`先行ごとの当選率（全体 ${W}/${N}・${Math.round(W/N*100)}%）`)+rows.map(([k,x])=>`<div class="bar"><div class="bl"><span>${esc(k)}</span><b>${x.w}/${x.n}　${Math.round(x.w/x.n*100)}%</b></div><div class="bt"><i style="width:${x.w/x.n*100}%"></i></div></div>`).join('')}
 async function setAV(k){settings.anaView=k;saveSettings();analytics()}
 async function toggleMI(k){const i=settings.moneyInc=settings.moneyInc||MI.map(m=>m[0]),x=i.indexOf(k);x>=0?i.splice(x,1):i.push(k);await saveSettings();analytics()}
 async function setTM(k){settings.trendMode=k;saveSettings();analytics()}
@@ -707,7 +735,7 @@ function analytics(){
    +h4('項目別')+bars(MI.map(m=>[m[1],L.reduce((s,e)=>s+m[2](e),0)]).filter(x=>x[1]).sort((a,b)=>b[1]-a[1])).replace(/<b>(\d+)<\/b>/g,(_,x)=>`<b>${yen(+x)}</b>`);
   if(aYear==='all'&&years.length){const ys=[...years].reverse();h+=h4('年ごとの合計')+bars(ys.map(y=>[y+'年',AL.filter(e=>e.date.startsWith(y)).reduce((s,e)=>s+sum(e),0)]).filter(x=>x[1])).replace(/<b>(\d+)<\/b>/g,(_,x)=>`<b>${yen(+x)}</b>`)}
   h+=h4('費用が多かった参戦')+L.filter(e=>sum(e)).sort((a,b)=>sum(b)-sum(a)).slice(0,5).map(e=>`<div class="bar" onclick="detail('${e.id}')" style="cursor:pointer"><div class="bl"><span>${esc(e.name.slice(0,26))}${e.name.length>26?'…':''}</span><b>${yen(sum(e))}</b></div></div>`).join('')}
- else if(v==='ticket')h+=h4('先行')+bars(cnt(L.map(e=>e.senko)),'s',15)+h4('入手元（プレイガイド）')+bars(cnt(L.map(e=>e.pg)))+h4('発券先')+bars(cnt(L.map(e=>e.hk)));
+ else if(v==='ticket')h+=winRate(aYear)+h4('参戦した公演の先行')+bars(cnt(L.map(e=>e.senko)),'s',15)+h4('入手元（プレイガイド）')+bars(cnt(L.map(e=>e.pg)))+h4('発券先')+bars(cnt(L.map(e=>e.hk)));
  else if(v==='tr'){const nm=k=>TR.find(x=>x[0]===k)?.[1];h+=h4('よく使う交通手段（行き・帰りのどちらか）')+bars(cnt(L.flatMap(e=>uniq([...(e.trGo||[]),...(e.trBack||[])]).map(nm))))+h4('行き')+bars(cnt(L.flatMap(e=>(e.trGo||[]).map(nm))))+h4('帰り')+bars(cnt(L.flatMap(e=>(e.trBack||[]).map(nm))))}
  $('aview').innerHTML=h;
  if(v==='vmap')renderVenueMap(L)}
@@ -887,7 +915,8 @@ async function detail(id){
  ${e.venue||e.pref?`<div class="drow"><div class="label">会場</div>${e.venue?`<span class="link" data-k="v" data-v="${esc(e.venue)}" onclick="fb(this)">${esc(e.venue)}</span>${e.room?`<span style="margin-right:6px">${esc(e.room)}</span>`:''}`:''}${e.venue&&!/某所/.test(e.venue)?`<span class="link" style="font-size:12px" onclick="openVenue('${encodeURIComponent(e.venue)}')">会場情報 ›</span>`:''}${findVenue(e.venue)?.sta?`<div class="event-meta">🚉 ${esc(findVenue(e.venue).sta)}</div>`:''}${e.pref?`<span class="tag" data-k="p" data-v="${esc(e.pref)}" onclick="fb(this)">${esc(e.pref)}</span>`:''}</div>`:''}
  ${e.artists.length?`<div class="drow"><div class="label">出演者</div>${e.artists.map(a=>{const n=nth(a);return `<span class="tag${oshiColor(a)?' oshi':''}" style="--oc:${oshiColor(a)||''}" data-k="a" data-v="${esc(a)}" onclick="fb(this)">${esc(a)}${n?`<small>${n}回目</small>`:''}</span>`}).join('')}</div>`:''}
  ${tTotal(e)?`<div class="drow"><div class="label">チケット代</div>${[['定価',e.pBase],['システム利用料',e.pSys],['発券手数料',e.pIssue],['その他',e.pOther]].filter(x=>x[1]!=null&&x[1]!=='').map(x=>`<div class="prow"><span>${x[0]}</span><span>${yen(x[1])}</span></div>`).join('')}<div class="prow t"><span>合計</span><span>${yen(tTotal(e))}</span></div></div>`:''}
- <div class="drow"><div class="label">座席</div>${esc(e.seat)||'<span class="mut">未登録</span>'}${md?mapHTML(md,e.point):''}</div>
+ <div class="drow"><div class="label">座席</div>${esc(e.seat)||'<span class="mut">未登録</span>'}${md?mapHTML(md,e.point,(e.tix||[]).flatMap(a=>a.result==='win'?a.seats:[]).filter(x=>x.point&&x.use!=='self').map(x=>`<div class="sdot" style="left:${x.point.x}%;top:${x.point.y}%;--c:${USE[x.use][1]}">${USE[x.use][0].slice(0,1)}</div>`).join('')):''}
+ ${(()=>{const t=tixSummary(e);return `<button type="button" class="txbtn" onclick="openTix('${e.id}')"><span>申込・チケット${t.apps?`　申込${t.apps}・当選${t.win}${t.lose?'・落選'+t.lose:''}・${t.seats}枚`:'（先行ごとの当落・同行者の席など）'}</span><b>›</b></button>`})()}</div>
  ${e.trGo?.length||e.trBack?.length||e.costGo!=null||e.costBack!=null?`<div class="drow"><div class="label">交通</div>${[['行き',e.trGo,e.costGo,''],['帰り',e.trBack,e.costBack,' back']].map(([l,m,c,cl])=>`<div class="trh"><i class="${cl}">${l}</i>${(m||[]).map(k=>{const t=TR.find(x=>x[0]===k);return `<span class="tri" style="--tc:${t[2]}">${trIcon(k)}${t[1]}</span>`}).join('')}<span style="margin-left:auto;font-weight:600">${yen(c)}</span></div>`).join('')}</div>`:''}
  ${allCost(e)?`<div class="drow"><div class="label">費用</div>${MI.map(m=>[m[1],m[2](e)]).filter(x=>x[1]).map(x=>`<div class="prow"><span>${x[0]}</span><span>${yen(x[1])}</span></div>`).join('')}<div class="prow t"><span>合計</span><span>${yen(allCost(e))}</span></div></div>`:''}
  ${e.tags.length?`<div class="drow"><div class="label">タグ</div>${e.tags.map(x=>`<span class="tag" data-k="t" data-v="${esc(x)}" onclick="fb(this)">#${esc(x)}</span>`).join('')}</div>`:''}
@@ -922,13 +951,14 @@ async function exportData(){
  const name=`sansen-log-${today()}.json`,file=new File([json],name,{type:'application/json'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'参戦ログ バックアップ'});return}catch(e){if(e.name==='AbortError')return}}
  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('書き出しました')}
-const norm=o=>({id:String(o.id),room:o.room||'',name:o.name||'',work:o.work||'',part:o.part||'',status:o.status==='skip'?'skip':'go',date:o.date||'',tOpen:o.tOpen||'',tStart:o.tStart||'',tEnd:o.tEnd||'',type:TYPES.includes(o.type)?o.type:'その他',venue:o.venue||'',pref:o.pref||'',artists:o.artists||[],senko:o.senko||'',seat:o.seat||'',trGo:o.trGo||[],trBack:o.trBack||[],costGo:o.costGo??null,costBack:o.costBack??null,mapId:o.mapId||null,point:o.point||null,url:o.url||'',tags:o.tags||[],note:o.note||'',imgs:o.imgs||[],pg:o.pg||'',hk:o.hk||'',pBase:o.pBase??null,pSys:o.pSys??null,pIssue:o.pIssue??null,pOther:o.pOther??null,cHotel:o.cHotel??null,cFood:o.cFood??null,cGoods:o.cGoods??null,cOther:o.cOther??null});
+const tixSelf=o=>{for(const a of o.tix||[])if(a.result!=="lose"&&a.result!=="pending")for(const x of a.seats||[])if(x.use==="self")return{a,x};return null};
+const norm=o=>(o=((m)=>m?{...o,seat:o.seat||m.x.seat||"",point:o.point||m.x.point||null,senko:o.senko||m.a.senko||"",pg:o.pg||m.a.pg||""}:o)(tixSelf(o)),{id:String(o.id),tix:(o.tix||[]).map(normT),room:o.room||'',name:o.name||'',work:o.work||'',part:o.part||'',status:o.status==='skip'?'skip':'go',date:o.date||'',tOpen:o.tOpen||'',tStart:o.tStart||'',tEnd:o.tEnd||'',type:TYPES.includes(o.type)?o.type:'その他',venue:o.venue||'',pref:o.pref||'',artists:o.artists||[],senko:o.senko||'',seat:o.seat||'',trGo:o.trGo||[],trBack:o.trBack||[],costGo:o.costGo??null,costBack:o.costBack??null,mapId:o.mapId||null,point:o.point||null,url:o.url||'',tags:o.tags||[],note:o.note||'',imgs:o.imgs||[],pg:o.pg||'',hk:o.hk||'',pBase:o.pBase??null,pSys:o.pSys??null,pIssue:o.pIssue??null,pOther:o.pOther??null,cHotel:o.cHotel??null,cFood:o.cFood??null,cGoods:o.cGoods??null,cOther:o.cOther??null});
 const normP=o=>({id:String(o.id),date:o.date||'',time:o.time||'',kind:PK[o.kind]?o.kind:'その他',title:o.title||'',eventId:o.eventId||'',note:o.note||'',done:!!o.done});
 async function importJSON(text){
  let added=0;
  try{const j=JSON.parse(String(text).trim());
   if(Array.isArray(j)){for(const o of j){const id='e'+o.id;if(es.some(x=>x.id===id))continue;let mid=null;if(o.seatMap){mid='m'+Date.now()+'_'+added;if(await S.set('map:'+mid,o.seatMap))maps[mid]=o.seatMap;else mid=null}es.push(norm({...o,id,mapId:mid,pref:findPref(o.place||'',true)}));added++}}
-  else if(j.events){for(const[k,v]of Object.entries(j.maps||{}))if(!(await S.get('map:'+k))&&await S.set('map:'+k,v))maps[k]=v;for(const[k,v]of Object.entries(j.imgs||{}))if(!(await S.get('img:'+k))&&await S.set('img:'+k,v))imgCache[k]=v;const upd=j.mode==='update';for(const o of j.events){const i=es.findIndex(x=>x.id===String(o.id));if(i>=0){if(!upd)continue;const old=es[i];es[i]=norm({...old,...o,seat:o.seat||old.seat,mapId:o.mapId||old.mapId,point:o.point||old.point,senko:o.senko||old.senko,trGo:o.trGo?.length?o.trGo:old.trGo,trBack:o.trBack?.length?o.trBack:old.trBack,costGo:o.costGo??old.costGo,costBack:o.costBack??old.costBack,tOpen:o.tOpen||old.tOpen,tStart:o.tStart||old.tStart,tEnd:o.tEnd||old.tEnd,imgs:o.imgs?.length?o.imgs:old.imgs,pg:o.pg||old.pg,room:o.room||old.room,hk:o.hk||old.hk,pBase:o.pBase??old.pBase,pSys:o.pSys??old.pSys,pIssue:o.pIssue??old.pIssue,pOther:o.pOther??old.pOther,cHotel:o.cHotel??old.cHotel,cFood:o.cFood??old.cFood,cGoods:o.cGoods??old.cGoods,cOther:o.cOther??old.cOther});added++;continue}es.push(norm(o));added++}
+  else if(j.events){for(const[k,v]of Object.entries(j.maps||{}))if(!(await S.get('map:'+k))&&await S.set('map:'+k,v))maps[k]=v;for(const[k,v]of Object.entries(j.imgs||{}))if(!(await S.get('img:'+k))&&await S.set('img:'+k,v))imgCache[k]=v;const upd=j.mode==='update';for(const o of j.events){const i=es.findIndex(x=>x.id===String(o.id));if(i>=0){if(!upd)continue;const old=es[i];es[i]=norm({...old,...o,seat:o.seat||old.seat,mapId:o.mapId||old.mapId,point:o.point||old.point,senko:o.senko||old.senko,trGo:o.trGo?.length?o.trGo:old.trGo,trBack:o.trBack?.length?o.trBack:old.trBack,costGo:o.costGo??old.costGo,costBack:o.costBack??old.costBack,tOpen:o.tOpen||old.tOpen,tStart:o.tStart||old.tStart,tEnd:o.tEnd||old.tEnd,imgs:o.imgs?.length?o.imgs:old.imgs,pg:o.pg||old.pg,room:o.room||old.room,tix:o.tix?.length?o.tix:old.tix,hk:o.hk||old.hk,pBase:o.pBase??old.pBase,pSys:o.pSys??old.pSys,pIssue:o.pIssue??old.pIssue,pOther:o.pOther??old.pOther,cHotel:o.cHotel??old.cHotel,cFood:o.cFood??old.cFood,cGoods:o.cGoods??old.cGoods,cOther:o.cOther??old.cOther});added++;continue}es.push(norm(o));added++}
    for(const o of j.venues||[]){if(!o?.name)continue;const ex=venues.find(v=>v.name===o.name);if(ex){let ch=0;for(const k of['pref','cap','sta','memo','ll'])if((ex[k]==null||ex[k]==='')&&o[k]!=null&&o[k]!==''){ex[k]=o[k];ch=1}if(ch)added++;continue}venues.push(normV(o));added++}await saveVenues();
    for(const o of j.plans||[]){if(plans.some(x=>x.id===String(o.id)))continue;plans.push(normP(o));added++}await savePlans();
    if(j.settings?.geo)settings.geo={...j.settings.geo,...(settings.geo||{})};
@@ -1127,14 +1157,19 @@ function renderEnv(){
  $('envBox').innerHTML=rows.map(([a,b])=>`<div class="envrow"><span>${a}</span><span>${b}</span></div>`).join('')+(storeOK?'':'<div class="hint" style="color:#c0564b">この開き方ではデータが保存されません。Safariで開いて「ホーム画面に追加」したアイコンから使ってください。</div>')}
 
 /* ---------- 会場：座席の分布 ---------- */
+let distAll=false;
+function distPts(e){if(!distAll)return e.point&&att(e)?[{...e.point,c:evOshi(e)[0]||'var(--ac)'}]:[];
+ const out=[];for(const a of e.tix||[])if(a.result==='win')for(const x of a.seats)if(x.point)out.push({...x.point,c:USE[x.use][1]});
+ if(!out.length&&e.point&&att(e))out.push({...e.point,c:USE.self[1]});return out}
+function setDistAll(v){distAll=v;renderDist(vform?.orig||$('v_name').value.trim())}
 function renderDist(name){
  const box=$('v_dist');if(!name||!vform){box.innerHTML='';return}
  let h='';
  for(const m of vform.maps){if(!m.id||!m.data)continue;
-  const ev=es.filter(e=>e.mapId===m.id&&e.point&&att(e)).sort(byAsc);if(!ev.length)continue;
-  const col=e=>evOshi(e)[0]||'var(--ac)';
-  const dots=ev.map((e,i)=>`<div class="sdot" data-i="${i}" style="left:${e.point.x}%;top:${e.point.y}%;--c:${col(e)}">${i+1}</div>`).join('');
-  h+=`<h3>座席の分布${m.label?'（'+esc(m.label)+'）':''}　${ev.length}回</h3><div class="distbox">${mapHTML(m.data,null,dots)}<div class="dlist">${ev.map((e,i)=>`<div data-i="${i}" data-id="${e.id}" style="--c:${col(e)}"><b>${i+1}</b><span>${esc(e.name)}${e.part?' '+esc(e.part):''}</span><em>${fmtD(e.date).slice(0,10)}${e.seat?'・'+esc(e.seat):''}</em></div>`).join('')}</div></div>`}
+  const ev=es.filter(e=>e.mapId===m.id&&distPts(e).length).sort(byAsc);if(!ev.length)continue;
+  const col=e=>distAll?'var(--ac)':(evOshi(e)[0]||'var(--ac)');
+  const dots=ev.flatMap((e,i)=>distPts(e).map(pt=>`<div class="sdot" data-i="${i}" style="left:${pt.x}%;top:${pt.y}%;--c:${pt.c}">${i+1}</div>`)).join('');
+  h+=`<h3>座席の分布${m.label?'（'+esc(m.label)+'）':''}　${ev.length}公演</h3><div class="filters" style="margin:6px 0">${[[false,'自分の席'],[true,'全チケット（同行・譲渡も）']].map(([v,l])=>`<button class="filter${distAll===v?' active':''}" onclick="setDistAll(${v})">${l}</button>`).join('')}</div>${distAll?`<div class="legend">${Object.values(USE).map(([l,c])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>`:''}<div class="distbox">${mapHTML(m.data,null,dots)}<div class="dlist">${ev.map((e,i)=>`<div data-i="${i}" data-id="${e.id}" style="--c:${col(e)}"><b>${i+1}</b><span>${esc(e.name)}${e.part?' '+esc(e.part):''}</span><em>${fmtD(e.date).slice(0,10)}${e.seat?'・'+esc(e.seat):''}</em></div>`).join('')}</div></div>`}
  box.innerHTML=h;
  box.querySelectorAll('.distbox').forEach(db=>{const hl=i=>{db.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));db.querySelectorAll(`[data-i="${i}"]`).forEach(x=>x.classList.add('hl'))};
   db.querySelectorAll('.sdot').forEach(d=>d.onclick=ev=>{ev.stopPropagation();hl(d.dataset.i);const row=db.querySelector(`.dlist [data-i="${d.dataset.i}"]`);toast(row.querySelector('span').textContent+'　'+row.querySelector('em').textContent,3500)});
@@ -1161,6 +1196,56 @@ async function ocrVenue(){
   if(sta&&!$('v_sta').value){$('v_sta').value=sta;got.push('最寄り駅 '+sta)}
   st.textContent=got.length?`読み取りました：${got.join('／')}（違っていたら直して保存してください）`:(cap||sta?'読み取れた内容はすでに入力済みでした':'読み取れませんでした。手で入力してください')}
  catch(e){st.textContent='読み取りできませんでした（ネットにつながっているときに試してください）'}}
+
+/* ---------- 申込・チケット管理 ---------- */
+const USE={self:['自分','#e2575a'],friend:['同行者','#5b8fd6'],transfer:['譲渡','#e0a33c'],unused:['未使用','#9a9a9a']};
+const RES={win:['当選','#4f8f6a'],lose:['落選','#c0564b'],pending:['申込中','#b08a3a']};
+const tid=()=>'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const normT=a=>({id:a.id||tid(),senko:a.senko||'',pg:a.pg||'',result:RES[a.result]?a.result:'win',note:a.note||'',seats:(a.seats||[]).map(s=>({id:s.id||tid(),seat:s.seat||'',point:s.point||null,use:USE[s.use]?s.use:'self',who:s.who||''}))});
+let tx=null;
+function tixSummary(e){const A=e.tix||[],w=A.filter(a=>a.result==='win'),n=w.reduce((s,a)=>s+a.seats.length,0);return{apps:A.length,win:w.length,lose:A.filter(a=>a.result==='lose').length,seats:n}}
+async function openTix(id){
+ const e=es.find(x=>x.id===id);if(!e)return;
+ tx={eid:id,apps:(e.tix||[]).map(normT),active:null,mapData:e.mapId?await getMap(e.mapId):null};
+ if(!tx.apps.length){const a=normT({senko:e.senko,pg:e.pg,result:'win',seats:[{seat:e.seat,point:e.point,use:'self'}]});if(e.senko||e.pg||e.seat)tx.apps.push(a)}
+ $('tx_title').textContent=e.name;$('tx_sub').textContent=[fmtD(e.date),e.part,e.venue+(e.room?' '+e.room:'')].filter(Boolean).join('・');
+ $('sDL2').innerHTML=uniq([...es.map(x=>x.senko),...es.flatMap(x=>(x.tix||[]).map(a=>a.senko))]).map(v=>`<option value="${esc(v)}">`).join('');
+ $('pgDL2').innerHTML=uniq([...PGS,...es.map(x=>x.pg)]).map(v=>`<option value="${esc(v)}">`).join('');
+ renderTix();show('tix')}
+function closeTix(){const id=tx?.eid;tx=null;id?detail(id):show(lastTab)}
+let txSaveT=null;
+function saveTix(){clearTimeout(txSaveT);txSaveT=setTimeout(async()=>{const e=es.find(x=>x.id===tx?.eid);if(!e)return;
+ e.tix=tx.apps.map(normT);const me=e.tix.flatMap(a=>a.result==='win'?a.seats.map(s=>({a,s})):[]).find(x=>x.s.use==='self');
+ if(me){if(me.s.seat)e.seat=me.s.seat;if(me.s.point)e.point=me.s.point;if(!e.senko&&me.a.senko)e.senko=me.a.senko;if(!e.pg&&me.a.pg)e.pg=me.a.pg}
+ await saveEvents()},300)}
+function seatList(){const out=[];tx.apps.forEach((a,ai)=>{if(a.result==='win')a.seats.forEach((s,si)=>out.push({a,s,ai,si}))});return out}
+function renderTix(){
+ const all=seatList(),sm={apps:tx.apps.length,win:tx.apps.filter(a=>a.result==='win').length,seats:all.length};
+ $('tx_sum').innerHTML=`<div class="stat"><b>${sm.apps}</b><span>申込</span></div><div class="stat"><b>${sm.win}</b><span>当選</span></div><div class="stat"><b>${sm.seats}</b><span>枚</span></div>`;
+ const act=tx.active,dots=all.map((x,n)=>x.s.point?`<div class="sdot${act&&act.ai===x.ai&&act.si===x.si?' hl':''}" style="left:${x.s.point.x}%;top:${x.s.point.y}%;--c:${USE[x.s.use][1]}">${n+1}</div>`:'').join('');
+ if(tx.mapData){$('tx_map').innerHTML=mapHTML(tx.mapData,null,dots);$('tx_leg').innerHTML=Object.values(USE).map(([l,c])=>`<span><i style="background:${c}"></i>${l}</span>`).join('');
+  $('tx_hint').textContent=act?`${act.n}番の座席の位置を座席表でタップしてください（拡大すると細かく刺せます）`:'座席の「📍」を押してから座席表をタップすると、その席に印が付きます'}
+ else{$('tx_leg').innerHTML='';const ms=venueMapsFor(es.find(x=>x.id===tx.eid)?.venue||'');$('tx_map').innerHTML=ms.length?`<div class="row">${ms.map(m=>`<button type="button" class="ghost" onclick="txUseMap('${m.id}')">座席表：${esc(m.label)}を使う</button>`).join('')}</div>`:'';$('tx_hint').textContent=ms.length?'座席表を選ぶと、座席に印を付けられます':'この記録には座席表がありません（記録の編集か、会場設定で座席表を入れると印を付けられます）'}
+ let n=0;
+ $('tx_list').innerHTML=tx.apps.map((a,ai)=>`<div class="tapp" style="--rc:${RES[a.result][1]}">
+  <div class="row"><input data-a="${ai}" data-k="senko" list="sDL2" value="${esc(a.senko)}" placeholder="先行名（例：FC最速先行）"><button type="button" class="ghost danger" onclick="delApp(${ai},this)">削除</button></div>
+  <div class="row"><input data-a="${ai}" data-k="pg" list="pgDL2" value="${esc(a.pg)}" placeholder="プレイガイド（例：チケットぴあ）"></div>
+  <div class="chips">${Object.entries(RES).map(([k,[l]])=>`<button type="button" class="chipb${a.result===k?' on res':''}" onclick="setRes(${ai},'${k}')">${l}</button>`).join('')}</div>
+  ${a.result==='win'?a.seats.map((s,si)=>{n++;const on=act&&act.ai===ai&&act.si===si;return `<div class="tseat"><div class="row"><b class="sn" style="--c:${USE[s.use][1]}">${n}</b><input data-a="${ai}" data-s="${si}" data-k="seat" value="${esc(s.seat)}" placeholder="座席（例：1階 12列 25番）"><button type="button" class="ghost${on?' on':''}" onclick="pinSeat(${ai},${si},${n})" ${tx.mapData?'':'disabled'}>📍${s.point?'✓':''}</button><button type="button" class="ghost danger" onclick="delSeat(${ai},${si})">×</button></div>
+   <div class="chips">${Object.entries(USE).map(([k,[l,c]])=>`<button type="button" class="chipb sm${s.use===k?' on':''}" style="--uc:${c}" onclick="setUse(${ai},${si},'${k}')">${l}</button>`).join('')}${s.use==='friend'||s.use==='transfer'?`<input class="who" data-a="${ai}" data-s="${si}" data-k="who" value="${esc(s.who)}" placeholder="${s.use==='friend'?'同行者の名前':'譲渡先'}">`:''}</div></div>`}).join('')+`<button type="button" class="ghost" onclick="addSeat(${ai})">＋ 座席を追加</button>`:''}
+  <input data-a="${ai}" data-k="note" value="${esc(a.note)}" placeholder="メモ（受付番号、入金期限など）" style="margin-top:8px"></div>`).join('')||'<div class="hint">まだ申込がありません。「＋ 申込を追加」から、先行ごとに当選・落選と座席を記録できます。</div>';
+ $('tx_list').querySelectorAll('input[data-k]').forEach(x=>x.oninput=()=>{const a=tx.apps[+x.dataset.a];if(x.dataset.s!=null)a.seats[+x.dataset.s][x.dataset.k]=x.value;else a[x.dataset.k]=x.value;saveTix()})}
+function addApp(){tx.apps.push(normT({result:'win',seats:[{use:tx.apps.some(a=>a.seats.some(s=>s.use==='self'))?'friend':'self'}]}));renderTix();saveTix()}
+function delApp(ai,b){if(!b.dataset.c){b.dataset.c=1;b.textContent='もう一度で削除';setTimeout(()=>{if(b.isConnected){delete b.dataset.c;b.textContent='削除'}},3000);return}tx.apps.splice(ai,1);tx.active=null;renderTix();saveTix()}
+function setRes(ai,k){const a=tx.apps[ai];a.result=k;if(k==='win'&&!a.seats.length)a.seats.push(normT({seats:[{use:'friend'}]}).seats[0]);tx.active=null;renderTix();saveTix()}
+function addSeat(ai){tx.apps[ai].seats.push({id:tid(),seat:'',point:null,use:'friend',who:''});renderTix();saveTix()}
+function delSeat(ai,si){tx.apps[ai].seats.splice(si,1);tx.active=null;renderTix();saveTix()}
+function setUse(ai,si,k){if(k==='self')tx.apps.forEach(a=>a.seats.forEach(s=>{if(s.use==='self')s.use='friend'}));tx.apps[ai].seats[si].use=k;renderTix();saveTix()}
+function pinSeat(ai,si,n){tx.active=tx.active&&tx.active.ai===ai&&tx.active.si===si?null:{ai,si,n};renderTix();if(tx.active)$('tx_map').scrollIntoView({behavior:'smooth',block:'start'})}
+async function txUseMap(id){const e=es.find(x=>x.id===tx.eid);if(!e)return;e.mapId=id;tx.mapData=await getMap(id);await saveEvents();renderTix()}
+$('tx_map').addEventListener('click',ev=>{const mi=ev.target.closest('.mapin');if(!mi||!tx?.active||Date.now()-pinchEnd<400)return;const r=mi.getBoundingClientRect(),s=tx.apps[tx.active.ai].seats[tx.active.si];
+ s.point={x:+((ev.clientX-r.left)/r.width*100).toFixed(2),y:+((ev.clientY-r.top)/r.height*100).toFixed(2)};const sc=mi.parentElement,sl=sc.scrollLeft,st=sc.scrollTop,z=mi.dataset.z;tx.active=null;renderTix();
+ const mi2=$('tx_map').querySelector('.mapin');if(mi2&&z){setZoom(mi2,+z);mi2.parentElement.scrollLeft=sl;mi2.parentElement.scrollTop=st}saveTix();toast('印を付けました')});
 
 /* ---------- 起動 ---------- */
 (async()=>{
