@@ -154,6 +154,8 @@ h3{font-size:12px;color:var(--mut);margin:28px 0 4px;font-weight:600;letter-spac
 .dlist span{flex:1;min-width:0}
 .dlist em{font-style:normal;color:var(--mut);white-space:nowrap}
 .ocrst{font-size:12px;color:var(--ac);margin-top:6px}
+.vthumb{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--sub)}
+.arow .vrow{display:flex;gap:10px;align-items:center;min-width:0}
 .tag.oshi::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--oc)}
 .ev-top{display:flex;gap:6px;align-items:center}
 .event-date{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
@@ -399,6 +401,9 @@ details textarea,.ta{width:100%;min-height:100px;margin-top:8px;padding:10px;bor
 <div class="form">
 <span class="fl">会場名 *</span><input id="v_name" placeholder="例：東京国際フォーラム ホールA">
 <div class="grid2"><div><span class="fl">都道府県</span><select id="v_pref"></select></div><div><span class="fl">収容人数</span><input id="v_cap" type="number" inputmode="numeric" min="0" placeholder="例：5012"></div></div>
+<span class="fl">会場の外観（写真）</span>
+<div class="imgrow" id="v_photos"></div>
+<label class="filebtn">外観の写真を追加<input id="v_photoFile" type="file" accept="image/*" multiple hidden></label>
 <span class="fl">座席表（階ごと・配置ごとに何枚でも登録できます）</span>
 <div id="v_maps"></div>
 <label class="filebtn">座席表の画像を追加<input id="v_mapFile" type="file" accept="image/*" multiple hidden></label>
@@ -494,7 +499,7 @@ const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${y}.${m}.${dd}
 const fmtMD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+m}月${+dd}日（${WD[new Date(+y,+m-1,+dd).getDay()]}）`};
 
 /* ---------- アイコン（ホーム画面用） ---------- */
-const APP_VER='2026.09.24b';
+const APP_VER='2026.09.24c';
 (function(){if(document.querySelector('link[rel=manifest][href$=".webmanifest"]'))return;try{
  const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
  const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#8196b3');g.addColorStop(1,'#5f7290');x.fillStyle=g;x.fillRect(0,0,180,180);
@@ -900,7 +905,7 @@ function quick(id,inp,list){$(id).innerHTML=list.map(x=>`<button type="button" d
 $('homePref').onchange=async function(){settings.homePref=this.value;await S.set('settings-v1',JSON.stringify(settings));toast('保存しました')};
 async function exportData(){
  const m={};for(const id of uniq([...es.map(e=>e.mapId),...venues.flatMap(v=>v.maps.map(x=>x.id))])){const d=await getMap(id);if(d)m[id]=d}
- const im={};for(const id of uniq(es.flatMap(e=>e.imgs||[]))){const d=await getImg(id);if(d)im[id]=d}
+ const im={};for(const id of uniq([...es.flatMap(e=>e.imgs||[]),...venues.flatMap(v=>v.photos||[])])){const d=await getImg(id);if(d)im[id]=d}
  const json=JSON.stringify({app:'sansen-log',version:1,exportedAt:new Date().toISOString(),settings,events:es,plans,venues,maps:m,imgs:im});
  const name=`sansen-log-${today()}.json`,file=new File([json],name,{type:'application/json'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'参戦ログ バックアップ'});return}catch(e){if(e.name==='AbortError')return}}
@@ -912,7 +917,7 @@ async function importJSON(text){
  try{const j=JSON.parse(String(text).trim());
   if(Array.isArray(j)){for(const o of j){const id='e'+o.id;if(es.some(x=>x.id===id))continue;let mid=null;if(o.seatMap){mid='m'+Date.now()+'_'+added;if(await S.set('map:'+mid,o.seatMap))maps[mid]=o.seatMap;else mid=null}es.push(norm({...o,id,mapId:mid,pref:findPref(o.place||'',true)}));added++}}
   else if(j.events){for(const[k,v]of Object.entries(j.maps||{}))if(!(await S.get('map:'+k))&&await S.set('map:'+k,v))maps[k]=v;for(const[k,v]of Object.entries(j.imgs||{}))if(!(await S.get('img:'+k))&&await S.set('img:'+k,v))imgCache[k]=v;const upd=j.mode==='update';for(const o of j.events){const i=es.findIndex(x=>x.id===String(o.id));if(i>=0){if(!upd)continue;const old=es[i];es[i]=norm({...old,...o,seat:o.seat||old.seat,mapId:o.mapId||old.mapId,point:o.point||old.point,senko:o.senko||old.senko,trGo:o.trGo?.length?o.trGo:old.trGo,trBack:o.trBack?.length?o.trBack:old.trBack,costGo:o.costGo??old.costGo,costBack:o.costBack??old.costBack,tOpen:o.tOpen||old.tOpen,tStart:o.tStart||old.tStart,tEnd:o.tEnd||old.tEnd,imgs:o.imgs?.length?o.imgs:old.imgs,pg:o.pg||old.pg,hk:o.hk||old.hk,pBase:o.pBase??old.pBase,pSys:o.pSys??old.pSys,pIssue:o.pIssue??old.pIssue,pOther:o.pOther??old.pOther,cHotel:o.cHotel??old.cHotel,cFood:o.cFood??old.cFood,cGoods:o.cGoods??old.cGoods,cOther:o.cOther??old.cOther});added++;continue}es.push(norm(o));added++}
-   for(const o of j.venues||[]){if(!o?.name||venues.some(v=>v.name===o.name))continue;venues.push(normV(o));added++}await saveVenues();
+   for(const o of j.venues||[]){if(!o?.name)continue;const ex=venues.find(v=>v.name===o.name);if(ex){let ch=0;for(const k of['pref','cap','sta','memo','ll'])if((ex[k]==null||ex[k]==='')&&o[k]!=null&&o[k]!==''){ex[k]=o[k];ch=1}if(ch)added++;continue}venues.push(normV(o));added++}await saveVenues();
    for(const o of j.plans||[]){if(plans.some(x=>x.id===String(o.id)))continue;plans.push(normP(o));added++}await savePlans();
    if(j.settings?.geo)settings.geo={...j.settings.geo,...(settings.geo||{})};
    if(j.settings?.homePref&&!settings.homePref){settings.homePref=j.settings.homePref;$('homePref').value=settings.homePref}
@@ -993,7 +998,7 @@ function prefMap(L){
 
 /* ---------- 会場マップ ---------- */
 const PREF_LL={'北海道':[43.06,141.35],'青森県':[40.82,140.74],'岩手県':[39.70,141.15],'宮城県':[38.27,140.87],'秋田県':[39.72,140.10],'山形県':[38.24,140.36],'福島県':[37.75,140.47],'茨城県':[36.34,140.45],'栃木県':[36.57,139.88],'群馬県':[36.39,139.06],'埼玉県':[35.86,139.65],'千葉県':[35.61,140.12],'東京都':[35.68,139.76],'神奈川県':[35.45,139.64],'新潟県':[37.90,139.02],'富山県':[36.70,137.21],'石川県':[36.59,136.63],'福井県':[36.07,136.22],'山梨県':[35.66,138.57],'長野県':[36.65,138.18],'岐阜県':[35.39,136.72],'静岡県':[34.98,138.38],'愛知県':[35.18,136.91],'三重県':[34.73,136.51],'滋賀県':[35.00,135.87],'京都府':[35.02,135.76],'大阪府':[34.69,135.52],'兵庫県':[34.69,135.18],'奈良県':[34.69,135.83],'和歌山県':[34.23,135.17],'鳥取県':[35.50,134.24],'島根県':[35.47,133.05],'岡山県':[34.66,133.93],'広島県':[34.40,132.46],'山口県':[34.19,131.47],'徳島県':[34.07,134.56],'香川県':[34.34,134.04],'愛媛県':[33.84,132.77],'高知県':[33.56,133.53],'福岡県':[33.61,130.42],'佐賀県':[33.25,130.30],'長崎県':[32.74,129.87],'熊本県':[32.79,130.74],'大分県':[33.24,131.61],'宮崎県':[31.91,131.42],'鹿児島県':[31.56,130.56],'沖縄県':[26.21,127.68]};
-const VGEO={'ABCホール':[34.6936,135.4854],'AiiA 2.5 Theater Kobe':[34.6800,135.1980],'EXPOメッセ「WASSE」':[34.8095,135.5320],'Home&nicoホール（江南市民文化会館）':[35.3322,136.8706],'J:COMホール八王子':[35.6566,139.3326],'Joshin 日本橋店 7F イベントホール':[34.6605,135.5060],'KAAT神奈川芸術劇場 ホール':[35.4450,139.6470],'KAAT神奈川芸術劇場 大スタジオ':[35.4450,139.6470],'Kアリーナ横浜':[35.4636,139.6285],'TFTホール1000':[35.6315,139.7925],'TODA HALL & CONFERENCE TOKYO':[35.6780,139.7710],'Theater Mixa（Mixalive TOKYO）':[35.7310,139.7160],'T・ジョイ京都':[34.9810,135.7555],'Zepp Haneda (TOKYO)':[35.5460,139.7650],'あうるすぽっと':[35.7275,139.7185],'こくみん共済 coop ホール／スペース・ゼロ':[35.6865,139.6985],'ところざわサクラタウン ジャパンパビリオン ホールA':[35.8050,139.5265],'はまぎんホール ヴィアマーレ':[35.4600,139.6320],'ひらしん平塚文化芸術ホール':[35.3310,139.3445],'みやこめっせ':[35.0135,135.7835],'よこすか芸術劇場':[35.2810,139.6710],'アニメイトシアター':[35.7305,139.7170],'エル・おおさか（エル・シアター）':[34.6925,135.5075],'クレオ大阪中央':[34.6680,135.5170],'グランドシネマサンシャイン池袋':[35.7300,139.7140],'サンパール荒川':[35.7370,139.7810],'シアター1010':[35.7495,139.8045],'シネマシティ（立川）':[35.6990,139.4135],'ニッショーホール':[35.6700,139.7475],'パシフィコ横浜 国立大ホール':[35.4575,139.6360],'ヒューリックホール東京':[35.6735,139.7625],'ベルサール神保町':[35.6960,139.7580],'メルパルクホール東京':[35.6570,139.7490],'ユナイテッド・シネマ アクアシティお台場':[35.6275,139.7735],'ロームシアター京都 サウスホール':[35.0155,135.7825],'三原市芸術文化センター ポポロ':[34.4000,133.0800],'丹波篠山市立田園交響ホール':[35.0730,135.2190],'京セラドーム大阪':[34.6695,135.4760],'京王アリーナTOKYO':[35.6590,139.5270],'加須文化・学習センター パストラルかぞ':[36.1300,139.6000],'同志社大学 寒梅館 ハーディーホール':[35.0305,135.7595],'嚴島神社 高舞台':[34.2960,132.3198],'国立代々木競技場第一体育館':[35.6675,139.7005],'大手町三井ホール':[35.6870,139.7640],'川口総合文化センター・リリア':[35.8040,139.7195],'幕張メッセ イベントホール':[35.6485,140.0350],'幕張国際研修センター':[35.6500,140.0450],'府中の森芸術劇場 どりーむホール':[35.6710,139.4920],'文京シビックホール 大ホール':[35.7080,139.7520],'新宮市文化複合施設（丹鶴ホール）':[33.7270,135.9900],'新江ノ島水族館':[35.3095,139.4800],'日光東照宮 五重塔前 野外特設ステージ':[36.7580,139.5990],'日本教育会館 一ツ橋ホール':[35.6935,139.7560],'日経ホール':[35.6870,139.7650],'星陵会館':[35.6770,139.7400],'有明アリーナ':[35.6370,139.7925],'東リ いたみホール':[34.7810,135.4180],'東京カルチャーカルチャー':[35.6570,139.7030],'東京ビッグサイト':[35.6300,139.7940],'東京国際フォーラム ホールA':[35.6765,139.7635],'東京電機大学 埼玉鳩山キャンパス':[35.9935,139.3500],'東放学園':[35.6950,139.6900],'松下IMPホール':[34.6925,135.5300],'森のホール21 大ホール':[35.8010,139.9510],'江戸川区総合文化センター':[35.7010,139.8710],'浅草公会堂':[35.7125,139.7945],'渋川市民会館':[36.4900,139.0000],'紀伊國屋書店 グランフロント大阪店':[34.7045,135.4950],'総本山醍醐寺':[34.9510,135.8190],'草月会館 草月ホール':[35.6730,139.7300],'豊洲PIT':[35.6505,139.7870],'赤坂RED/THEATER':[35.6720,139.7370],'銀座ブロッサム中央会館':[35.6700,139.7700],'鎌倉プリンスホテル':[35.3060,139.5000],'青葉の森公園芸術文化ホール':[35.5935,140.1355]};
+const VGEO={'ABCホール':[34.6936,135.4854],'AiiA 2.5 Theater Kobe':[34.7066,135.1955],'EXPOメッセ「WASSE」':[34.8095,135.5320],'Home&nicoホール（江南市民文化会館）':[35.3322,136.8706],'J:COMホール八王子':[35.6566,139.3326],'Joshin 日本橋店 7F イベントホール':[34.6605,135.5060],'KAAT神奈川芸術劇場 ホール':[35.4450,139.6470],'KAAT神奈川芸術劇場 大スタジオ':[35.4450,139.6470],'Kアリーナ横浜':[35.4636,139.6285],'TFTホール1000':[35.6315,139.7925],'TODA HALL & CONFERENCE TOKYO':[35.6780,139.7710],'Theater Mixa（Mixalive TOKYO）':[35.7310,139.7160],'T・ジョイ京都':[34.9810,135.7555],'Zepp Haneda (TOKYO)':[35.5460,139.7650],'あうるすぽっと':[35.7275,139.7185],'こくみん共済 coop ホール／スペース・ゼロ':[35.6865,139.6985],'ところざわサクラタウン ジャパンパビリオン ホールA':[35.8050,139.5265],'はまぎんホール ヴィアマーレ':[35.4600,139.6320],'ひらしん平塚文化芸術ホール':[35.3310,139.3445],'みやこめっせ':[35.0135,135.7835],'よこすか芸術劇場':[35.2810,139.6710],'アニメイトシアター':[35.7305,139.7170],'エル・おおさか（エル・シアター）':[34.6925,135.5075],'クレオ大阪中央':[34.6680,135.5170],'グランドシネマサンシャイン池袋':[35.7300,139.7140],'サンパール荒川':[35.7370,139.7810],'シアター1010':[35.7495,139.8045],'シネマシティ（立川）':[35.6990,139.4135],'ニッショーホール':[35.6700,139.7475],'パシフィコ横浜 国立大ホール':[35.4575,139.6360],'ヒューリックホール東京':[35.6735,139.7625],'ベルサール神保町':[35.6960,139.7580],'メルパルクホール東京':[35.6570,139.7490],'ユナイテッド・シネマ アクアシティお台場':[35.6275,139.7735],'ロームシアター京都 サウスホール':[35.0155,135.7825],'三原市芸術文化センター ポポロ':[34.4000,133.0800],'丹波篠山市立田園交響ホール':[35.0730,135.2190],'京セラドーム大阪':[34.6695,135.4760],'京王アリーナTOKYO':[35.6590,139.5270],'加須文化・学習センター パストラルかぞ':[36.1300,139.6000],'同志社大学 寒梅館 ハーディーホール':[35.0305,135.7595],'嚴島神社 高舞台':[34.2960,132.3198],'国立代々木競技場第一体育館':[35.6675,139.7005],'大手町三井ホール':[35.6870,139.7640],'川口総合文化センター・リリア':[35.8040,139.7195],'幕張メッセ イベントホール':[35.6485,140.0350],'幕張国際研修センター':[35.6500,140.0450],'府中の森芸術劇場 どりーむホール':[35.6710,139.4920],'文京シビックホール 大ホール':[35.7080,139.7520],'新宮市文化複合施設（丹鶴ホール）':[33.7270,135.9900],'新江ノ島水族館':[35.3095,139.4800],'日光東照宮 五重塔前 野外特設ステージ':[36.7580,139.5990],'日本教育会館 一ツ橋ホール':[35.6935,139.7560],'日経ホール':[35.6870,139.7650],'星陵会館':[35.6770,139.7400],'有明アリーナ':[35.6370,139.7925],'東リ いたみホール':[34.7810,135.4180],'東京カルチャーカルチャー':[35.6570,139.7030],'東京ビッグサイト':[35.6300,139.7940],'東京国際フォーラム ホールA':[35.6765,139.7635],'東京電機大学 埼玉鳩山キャンパス':[35.9935,139.3500],'東放学園':[35.6950,139.6900],'松下IMPホール':[34.6925,135.5300],'森のホール21 大ホール':[35.8010,139.9510],'江戸川区総合文化センター':[35.7010,139.8710],'浅草公会堂':[35.7125,139.7945],'渋川市民会館':[36.4900,139.0000],'紀伊國屋書店 グランフロント大阪店':[34.7045,135.4950],'総本山醍醐寺':[34.9510,135.8190],'草月会館 草月ホール':[35.6730,139.7300],'豊洲PIT':[35.6505,139.7870],'赤坂RED/THEATER':[35.6720,139.7370],'銀座ブロッサム中央会館':[35.6700,139.7700],'鎌倉プリンスホテル':[35.3060,139.5000],'青葉の森公園芸術文化ホール':[35.5935,140.1355]};
 const venueLL=e=>findVenue(e.venue)?.ll||(settings.geo||{})[e.venue]||VGEO[e.venue]||PREF_LL[e.pref];
 let leafP=null,vmap=null,vLayer=null,vGroups=[];
 function loadLeaflet(){if(window.L&&window.L.map)return Promise.resolve();if(leafP)return leafP;
@@ -1045,23 +1050,28 @@ async function tintImg(src){
 let venues=[],vform=null;
 const saveVenues=()=>S.set('venues-v1',JSON.stringify(venues));
 const findVenue=n=>n?venues.find(v=>v.name===n):null;
-const normV=o=>({id:String(o.id||('v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5))),name:o.name||'',pref:o.pref||'',cap:o.cap??null,memo:o.memo||'',sta:o.sta||'',maps:(o.maps||[]).filter(m=>m&&m.id).map(m=>({id:m.id,label:m.label||''})),ll:o.ll||null});
+const normV=o=>({id:String(o.id||('v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5))),name:o.name||'',pref:o.pref||'',cap:o.cap??null,memo:o.memo||'',sta:o.sta||'',photos:o.photos||[],maps:(o.maps||[]).filter(m=>m&&m.id).map(m=>({id:m.id,label:m.label||''})),ll:o.ll||null});
 function setSeg(t){document.querySelectorAll('#setSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.setp').forEach(p=>p.hidden=p.dataset.t!==t)}
 function renderVenues(){
  const q=$('vq').value.trim().toLowerCase(),names=uniq([...venues.map(v=>v.name),...es.map(e=>e.venue)]).filter(n=>n&&!/某所/.test(n));
  const rows=names.map(n=>{const v=findVenue(n),ev=es.filter(e=>e.venue===n);return{n,v,c:ev.filter(att).length,pref:v?.pref||ev.find(e=>e.pref)?.pref||''}}).filter(x=>!q||x.n.toLowerCase().includes(q)).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n,'ja'));
- $('vlistS').innerHTML=`<div class="hint" style="margin:10px 0 0">${rows.length}会場（登録済み ${rows.filter(x=>x.v).length}）</div>`+rows.map(x=>`<div class="arow" onclick="openVenue('${encodeURIComponent(x.n)}')"><div style="min-width:0"><b>${esc(x.n)}</b><div class="event-meta">${[x.pref,x.v?.cap?Number(x.v.cap).toLocaleString()+'席':'',x.v?.sta||'',x.v?.maps?.length?`座席表${x.v.maps.length}枚`:''].filter(Boolean).map(esc).join('・')}${x.v?'':'<span style="color:#b08a3a">　未登録</span>'}</div></div><div class="n">${x.c}<small>回</small></div></div>`).join('')}
+ $('vlistS').innerHTML=`<div class="hint" style="margin:10px 0 0">${rows.length}会場（登録済み ${rows.filter(x=>x.v).length}）</div>`+rows.map(x=>`<div class="arow" onclick="openVenue('${encodeURIComponent(x.n)}')"><div class="vrow">${x.v?.photos?.[0]?`<img class="vthumb" data-img="${x.v.photos[0]}" alt="">`:''}<div style="min-width:0"><b>${esc(x.n)}</b><div class="event-meta">${[x.pref,x.v?.cap?Number(x.v.cap).toLocaleString()+'席':'',x.v?.sta||'',x.v?.maps?.length?`座席表${x.v.maps.length}枚`:''].filter(Boolean).map(esc).join('・')}${x.v?'':'<span style="color:#b08a3a">　未登録</span>'}</div></div></div><div class="n">${x.c}<small>回</small></div></div>`).join('')}
 async function openVenue(enc){
  const name=enc?decodeURIComponent(enc):'',v=findVenue(name);
- vform={orig:v?v.name:name,reg:!!v,id:v?.id||null,maps:[]};
+ vform={orig:v?v.name:name,reg:!!v,id:v?.id||null,maps:[],photos:[]};
+ for(const id of v?.photos||[]){const d=await getImg(id);if(d)vform.photos.push({id,data:d})}
  $('vtitle').textContent=v?'会場を編集':name?'会場を登録':'会場を追加';
  $('v_name').value=name;$('v_pref').value=v?.pref||es.find(e=>e.venue===name&&e.pref)?.pref||'';$('v_cap').value=v?.cap??'';$('v_sta').value=v?.sta||'';$('v_ocr').textContent='';$('v_memo').value=v?.memo||'';
  if(v)for(const m of v.maps){const d=await getMap(m.id);if(d)vform.maps.push({id:m.id,label:m.label,data:d})}
  else{for(const id of uniq(es.filter(e=>e.venue===name&&e.mapId).sort(byDesc).map(e=>e.mapId)).slice(0,3)){const d=await getMap(id);if(d)vform.maps.push({id,label:'',data:d})}}
  $('v_del').style.display=v?'':'none';$('v_del').textContent='この会場の登録を削除';delete $('v_del').dataset.c;
- renderVMaps();renderDist(name);
+ renderVMaps();renderVPhotos();renderDist(name);
  const ev=name?es.filter(e=>e.venue===name).sort(byDesc):[];$('v_evh').textContent=ev.length?`この会場の記録（${ev.filter(att).length}回参戦）`:'';$('v_evs').innerHTML=ev.map(card).join('');
  show('venue')}
+function renderVPhotos(){
+ $('v_photos').innerHTML=vform.photos.map((x,i)=>`<div class="imgt"><img src="${x.data}" alt="" onclick="viewImg(this.src)"><button type="button" data-x="${i}" aria-label="外す">×</button></div>`).join('')||'<div class="hint" style="margin:0">まだ写真がありません</div>';
+ $('v_photos').querySelectorAll('button').forEach(b=>b.onclick=()=>{vform.photos.splice(+b.dataset.x,1);renderVPhotos()})}
+$('v_photoFile').onchange=async function(){const fs=[...this.files];this.value='';for(const f of fs){try{vform.photos.push({id:null,data:await compress(f)});renderVPhotos()}catch(e){imgErr(e)}}};
 function renderVMaps(){
  $('v_maps').innerHTML=vform.maps.map((m,i)=>`<div class="vmapitem"><div class="row"><input data-l="${i}" value="${esc(m.label)}" placeholder="名前（例：1階、2階、センターステージ）"><button type="button" class="ghost danger" data-x="${i}">外す</button></div>${mapHTML(m.data,null)}</div>`).join('')||'<div class="hint" style="margin:0 0 8px">まだ座席表がありません</div>';
  $('v_maps').querySelectorAll('input[data-l]').forEach(x=>x.oninput=()=>{vform.maps[+x.dataset.l].label=x.value});
@@ -1073,7 +1083,9 @@ async function saveVenue(){
  if(name!==vform.orig&&findVenue(name)){toast('同じ名前の会場がすでに登録されています');return}
  const old=vform.reg?findVenue(vform.orig):null,vm=[];
  for(const m of vform.maps){if(!m.id){const id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);if(await S.set('map:'+id,m.data)){maps[id]=m.data;m.id=id}else{toast('座席表の保存に失敗しました');continue}}vm.push({id:m.id,label:m.label.trim()})}
- const v=normV({id:vform.id,name,pref:$('v_pref').value,cap:$('v_cap').value===''?null:+$('v_cap').value,memo:$('v_memo').value.trim(),sta:$('v_sta').value.trim(),maps:vm,ll:old?.ll||null});
+ const ph=[];for(const x of vform.photos){if(!x.id){const id='i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);if(await S.set('img:'+id,x.data)){imgCache[id]=x.data;x.id=id}else continue}ph.push(x.id)}
+ for(const id of old?.photos||[])if(!ph.includes(id)&&!es.some(e=>(e.imgs||[]).includes(id))){await S.del('img:'+id);delete imgCache[id]}
+ const v=normV({id:vform.id,photos:ph,name,pref:$('v_pref').value,cap:$('v_cap').value===''?null:+$('v_cap').value,memo:$('v_memo').value.trim(),sta:$('v_sta').value.trim(),maps:vm,ll:old?.ll||null});
  if(old)venues[venues.indexOf(old)]=v;else venues.push(v);
  let moved=0;if(vform.orig&&name!==vform.orig){es.forEach(e=>{if(e.venue===vform.orig){e.venue=name;moved++}});if(moved)await saveEvents();if(settings.geo?.[vform.orig]&&!settings.geo[name]){settings.geo[name]=settings.geo[vform.orig];saveSettings()}}
  await saveVenues();for(const m of old?.maps||[])if(!vm.some(x=>x.id===m.id))await cleanupMap(m.id);

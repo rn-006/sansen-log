@@ -1,5 +1,5 @@
 // 参戦ログ オフライン対応（Service Worker）
-const VER = 'sansen-log-2026.09.24b';
+const VER = 'sansen-log-2026.09.24c';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const EXT = 'sansen-log-ext';     // 地図ライブラリ・フォント
 const TILE = 'sansen-log-tiles';  // 地図の画像（一定数まで）
