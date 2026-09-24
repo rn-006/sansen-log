@@ -1,5 +1,5 @@
 // 参戦ログ オフライン対応（Service Worker）
-const VER = 'sansen-log-2026.09.24';
+const VER = 'sansen-log-2026.09.24b';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const EXT = 'sansen-log-ext';     // 地図ライブラリ・フォント
 const TILE = 'sansen-log-tiles';  // 地図の画像（一定数まで）
@@ -40,5 +40,5 @@ self.addEventListener('fetch', e => {
   const u = new URL(req.url);
   if (u.origin === location.origin) { e.respondWith(appShell(req)); return; }
   if (/basemaps\.cartocdn\.com/.test(u.host)) { e.respondWith(staleWhileRevalidate(req, TILE, 600)); return; }
-  if (/cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/.test(u.host)) { e.respondWith(staleWhileRevalidate(req, EXT)); return; }
+  if (/cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|tessdata\.projectnaptha\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/.test(u.host)) { e.respondWith(staleWhileRevalidate(req, EXT)); return; }
 });

@@ -144,6 +144,16 @@ h3{font-size:12px;color:var(--mut);margin:28px 0 4px;font-weight:600;letter-spac
 .vsug .reg{color:var(--ac)}
 .event.hasimg{flex-direction:column;gap:10px}
 .evhero{width:100%;max-height:440px;object-fit:cover;border-radius:12px;display:block;background:var(--sub)}
+.zoom .zl{font-size:10px;text-align:center;color:#555;background:rgba(255,255,255,.92);border-radius:6px;padding:1px 0}
+.sdot{position:absolute;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--c,var(--ac));color:#fff;font-size:10px;font-weight:700;line-height:14px;text-align:center;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:pointer}
+.sdot.hl{transform:translate(-50%,-50%) scale(1.5);z-index:3;background:#e2575a}
+.dlist{margin-top:6px}
+.dlist div{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:5px 2px;border-bottom:1px solid var(--ln);cursor:pointer}
+.dlist div.hl{background:var(--ac-l)}
+.dlist b{flex:none;min-width:22px;text-align:center;border-radius:9px;background:var(--c,var(--ac));color:#fff;font-size:10px;padding:0 4px}
+.dlist span{flex:1;min-width:0}
+.dlist em{font-style:normal;color:var(--mut);white-space:nowrap}
+.ocrst{font-size:12px;color:var(--ac);margin-top:6px}
 .tag.oshi::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--oc)}
 .ev-top{display:flex;gap:6px;align-items:center}
 .event-date{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
@@ -195,12 +205,12 @@ details textarea,.ta{width:100%;min-height:100px;margin-top:8px;padding:10px;bor
 .danger{color:#c0564b}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .seatmap{position:relative;margin-top:8px;border:1px solid var(--ln);border-radius:10px;overflow:hidden;background:#fafafa}
-.mapsc{overflow:auto;max-height:62vh;-webkit-overflow-scrolling:touch}
+.mapsc{overflow:auto;max-height:62vh;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
 .mapin{position:relative;width:100%}
 .mapin img{width:100%;display:block;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none}
 .zoom{position:absolute;right:6px;top:6px;z-index:2;display:flex;flex-direction:column;gap:4px}
 .zoom button{width:32px;height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,0,0,.15);font-size:15px}
-.marker{position:absolute;width:20px;height:20px;border-radius:50%;background:#e2575a;border:3px solid #fff;transform:translate(-50%,-50%);animation:pl 1.8s infinite;pointer-events:none}
+.marker{position:absolute;width:14px;height:14px;border-radius:50%;background:#e2575a;border:2.5px solid #fff;z-index:1;transform:translate(-50%,-50%);animation:pl 1.8s infinite;pointer-events:none}
 @keyframes pl{0%{box-shadow:0 0 0 0 rgba(226,87,90,.55)}70%{box-shadow:0 0 0 12px rgba(226,87,90,0)}100%{box-shadow:0 0 0 0 rgba(226,87,90,0)}}
 .dname{margin:6px 0 10px;font-size:20px}
 .drow{padding:12px 0;border-bottom:1px solid var(--ln)}
@@ -392,10 +402,13 @@ details textarea,.ta{width:100%;min-height:100px;margin-top:8px;padding:10px;bor
 <span class="fl">座席表（階ごと・配置ごとに何枚でも登録できます）</span>
 <div id="v_maps"></div>
 <label class="filebtn">座席表の画像を追加<input id="v_mapFile" type="file" accept="image/*" multiple hidden></label>
-<span class="fl">アクセス・メモ</span><textarea id="v_memo" placeholder="最寄り駅、コインロッカー、トイレの場所など"></textarea>
+<span class="fl">最寄り駅・アクセス</span><input id="v_sta" placeholder="例：有楽町駅から徒歩約2分">
+<button type="button" class="ghost" style="margin-top:8px" onclick="ocrVenue()">座席表の画像から最寄り駅・収容人数を読み取る</button><div class="ocrst" id="v_ocr"></div>
+<span class="fl">メモ</span><textarea id="v_memo" placeholder="コインロッカー、トイレの場所など"></textarea>
 <button type="button" class="primary" onclick="saveVenue()">保存する</button>
 <button type="button" id="v_del" class="secondary danger" onclick="delVenue(this)">この会場の登録を削除</button>
 </div>
+<div id="v_dist"></div>
 <h3 id="v_evh"></h3><div id="v_evs"></div>
 </section>
 
@@ -481,7 +494,7 @@ const fmtD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${y}.${m}.${dd}
 const fmtMD=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+m}月${+dd}日（${WD[new Date(+y,+m-1,+dd).getDay()]}）`};
 
 /* ---------- アイコン（ホーム画面用） ---------- */
-const APP_VER='2026.09.24';
+const APP_VER='2026.09.24b';
 (function(){if(document.querySelector('link[rel=manifest][href$=".webmanifest"]'))return;try{
  const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
  const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#8196b3');g.addColorStop(1,'#5f7290');x.fillStyle=g;x.fillRect(0,0,180,180);
@@ -701,14 +714,25 @@ function suggList(id,ci,list){if(!ci)return;$(id).innerHTML=list.filter(x=>!ci.h
 function sugg(id,ci,src){if(!ci)return;$(id).innerHTML=cnt(src).map(x=>x[0]).filter(x=>!ci.has(x)).slice(0,8).map(x=>`<button type="button" data-v="${esc(x)}">＋${esc(x)}</button>`).join('');$(id).querySelectorAll('button').forEach(b=>b.onclick=()=>ci.add(b.dataset.v))}
 
 /* ---------- 座席表 ---------- */
-function mapHTML(data,pt){return `<div class="seatmap"><div class="zoom"><button type="button" onclick="zoom(this,1)">＋</button><button type="button" onclick="zoom(this,-1)">－</button></div><div class="mapsc"><div class="mapin"><img src="${data}" alt="座席表"${settings.seatTint?' data-tint="1"':''}>${pt?`<div class="marker" style="left:${pt.x}%;top:${pt.y}%"></div>`:''}</div></div></div>`}
-function zoom(b,d){const mi=b.closest('.seatmap').querySelector('.mapin'),sc=mi.parentElement;let z=+(mi.dataset.z||1);z=Math.min(4,Math.max(1,z+d*.75));mi.dataset.z=z;mi.style.width=z*100+'%';const m=mi.querySelector('.marker');if(m)requestAnimationFrame(()=>{sc.scrollLeft=m.offsetLeft-sc.clientWidth/2;sc.scrollTop=m.offsetTop-sc.clientHeight/2})}
+function mapHTML(data,pt,extra){return `<div class="seatmap"><div class="zoom"><button type="button" onclick="zoom(this,1)">＋</button><button type="button" onclick="zoom(this,-1)">－</button><span class="zl">×1</span></div><div class="mapsc"><div class="mapin"><img src="${data}" alt="座席表"${settings.seatTint?' data-tint="1"':''}>${pt?`<div class="marker" style="left:${pt.x}%;top:${pt.y}%"></div>`:''}${extra||''}</div></div></div>`}
+function setZoom(mi,z,fx,fy){const sc=mi.parentElement,old=+(mi.dataset.z||1);z=Math.min(8,Math.max(1,z));if(fx==null){fx=sc.clientWidth/2;fy=sc.clientHeight/2}
+ const cx=(sc.scrollLeft+fx)/old,cy=(sc.scrollTop+fy)/old;mi.dataset.z=z;mi.style.width=z*100+'%';sc.scrollLeft=cx*z-fx;sc.scrollTop=cy*z-fy;
+ const l=mi.closest('.seatmap').querySelector('.zl');if(l)l.textContent='×'+(Math.round(z*10)/10)}
+function zoom(b,d){const mi=b.closest('.seatmap').querySelector('.mapin'),sc=mi.parentElement,z=+(mi.dataset.z||1),m=mi.querySelector('.marker');
+ if(m&&d>0&&z===1){setZoom(mi,z*1.6);requestAnimationFrame(()=>{sc.scrollLeft=m.offsetLeft-sc.clientWidth/2;sc.scrollTop=m.offsetTop-sc.clientHeight/2})}else setZoom(mi,d>0?z*1.6:z/1.6)}
+/* 2本指でピンチして拡大・縮小 */
+let pinch=null,pinchEnd=0;
+document.addEventListener('touchstart',e=>{const sc=e.target.closest?.('.mapsc');if(!sc||e.touches.length!==2)return;const[a,b]=e.touches,r=sc.getBoundingClientRect(),mi=sc.querySelector('.mapin');
+ pinch={sc,mi,d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),z:+(mi.dataset.z||1),fx:(a.clientX+b.clientX)/2-r.left,fy:(a.clientY+b.clientY)/2-r.top}},{passive:true});
+document.addEventListener('touchmove',e=>{if(!pinch||e.touches.length!==2)return;e.preventDefault();const[a,b]=e.touches;setZoom(pinch.mi,pinch.z*Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)/pinch.d,pinch.fx,pinch.fy)},{passive:false});
+document.addEventListener('touchend',e=>{if(pinch&&e.touches.length<2){pinch=null;pinchEnd=Date.now()}});
+document.addEventListener('gesturestart',e=>{if(e.target.closest?.('.mapsc'))e.preventDefault()});
 function renderFormMap(){
  $('fmap').innerHTML=form.mapData?mapHTML(form.mapData,form.point):'';
  $('rmMap').style.display=form.mapData?'':'none';
- $('maphint').textContent=form.mapData?(form.point?'印をつけました（タップで位置を変更できます）':'座席表をタップして、観た位置に印をつけてください'):'会場の座席表の画像（スクショでもOK）を選ぶと、観た位置に印をつけられます';
+ $('maphint').textContent=form.mapData?(form.point?'印をつけました（タップで位置を変更できます）':'座席表をタップして、観た位置に印をつけてください（2本指や＋ボタンで拡大すると細かく刺せます）'):'会場の座席表の画像（スクショでもOK）を選ぶと、観た位置に印をつけられます';
  updateReuse()}
-$('fmap').addEventListener('click',e=>{const mi=e.target.closest('.mapin');if(!mi)return;const r=mi.getBoundingClientRect();form.point={x:+((e.clientX-r.left)/r.width*100).toFixed(2),y:+((e.clientY-r.top)/r.height*100).toFixed(2)};mi.querySelector('.marker')?.remove();const m=document.createElement('div');m.className='marker';m.style.left=form.point.x+'%';m.style.top=form.point.y+'%';mi.appendChild(m);$('maphint').textContent='印をつけました（タップで位置を変更できます）'});
+$('fmap').addEventListener('click',e=>{const mi=e.target.closest('.mapin');if(!mi||Date.now()-pinchEnd<400)return;const r=mi.getBoundingClientRect();form.point={x:+((e.clientX-r.left)/r.width*100).toFixed(2),y:+((e.clientY-r.top)/r.height*100).toFixed(2)};mi.querySelector('.marker')?.remove();const m=document.createElement('div');m.className='marker';m.style.left=form.point.x+'%';m.style.top=form.point.y+'%';mi.appendChild(m);$('maphint').textContent='印をつけました（もう一度タップすると位置を変えられます）'});
 const readURL=f=>new Promise((ok,ng)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>ng(r.error);r.readAsDataURL(f)});
 const loadEl=src=>new Promise((ok,ng)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ng;i.src=src});
 async function compress(file){
@@ -843,7 +867,7 @@ async function detail(id){
  ${att(e)?'':'<div class="drow"><span class="badge">行かない（落選・見送り）</span></div>'}
  <div class="drow"><div class="label">日付</div>${fmtD(e.date)}${[['開場',e.tOpen],['開演',e.tStart],['終演',e.tEnd]].filter(x=>x[1]).map(x=>`<span class="etime" style="margin-left:10px">${x[0]} ${x[1]}</span>`).join('')}</div>
  ${e.senko||e.pg||e.hk?`<div class="drow"><div class="label">チケット</div>${[['先行',e.senko],['入手元',e.pg],['発券',e.hk]].filter(x=>x[1]).map(x=>`<div class="prow"><span class="mut">${x[0]}</span><span>${esc(x[1])}</span></div>`).join('')}</div>`:''}
- ${e.venue||e.pref?`<div class="drow"><div class="label">会場</div>${e.venue?`<span class="link" data-k="v" data-v="${esc(e.venue)}" onclick="fb(this)">${esc(e.venue)}</span>`:''}${e.venue&&!/某所/.test(e.venue)?`<span class="link" style="font-size:12px" onclick="openVenue('${encodeURIComponent(e.venue)}')">会場情報 ›</span>`:''}${e.pref?`<span class="tag" data-k="p" data-v="${esc(e.pref)}" onclick="fb(this)">${esc(e.pref)}</span>`:''}</div>`:''}
+ ${e.venue||e.pref?`<div class="drow"><div class="label">会場</div>${e.venue?`<span class="link" data-k="v" data-v="${esc(e.venue)}" onclick="fb(this)">${esc(e.venue)}</span>`:''}${e.venue&&!/某所/.test(e.venue)?`<span class="link" style="font-size:12px" onclick="openVenue('${encodeURIComponent(e.venue)}')">会場情報 ›</span>`:''}${findVenue(e.venue)?.sta?`<div class="event-meta">🚉 ${esc(findVenue(e.venue).sta)}</div>`:''}${e.pref?`<span class="tag" data-k="p" data-v="${esc(e.pref)}" onclick="fb(this)">${esc(e.pref)}</span>`:''}</div>`:''}
  ${e.artists.length?`<div class="drow"><div class="label">出演者</div>${e.artists.map(a=>{const n=nth(a);return `<span class="tag${oshiColor(a)?' oshi':''}" style="--oc:${oshiColor(a)||''}" data-k="a" data-v="${esc(a)}" onclick="fb(this)">${esc(a)}${n?`<small>${n}回目</small>`:''}</span>`}).join('')}</div>`:''}
  ${tTotal(e)?`<div class="drow"><div class="label">チケット代</div>${[['定価',e.pBase],['システム利用料',e.pSys],['発券手数料',e.pIssue],['その他',e.pOther]].filter(x=>x[1]!=null&&x[1]!=='').map(x=>`<div class="prow"><span>${x[0]}</span><span>${yen(x[1])}</span></div>`).join('')}<div class="prow t"><span>合計</span><span>${yen(tTotal(e))}</span></div></div>`:''}
  <div class="drow"><div class="label">座席</div>${esc(e.seat)||'<span class="mut">未登録</span>'}${md?mapHTML(md,e.point):''}</div>
@@ -1021,35 +1045,35 @@ async function tintImg(src){
 let venues=[],vform=null;
 const saveVenues=()=>S.set('venues-v1',JSON.stringify(venues));
 const findVenue=n=>n?venues.find(v=>v.name===n):null;
-const normV=o=>({id:String(o.id||('v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5))),name:o.name||'',pref:o.pref||'',cap:o.cap??null,memo:o.memo||'',maps:(o.maps||[]).filter(m=>m&&m.id).map(m=>({id:m.id,label:m.label||''})),ll:o.ll||null});
+const normV=o=>({id:String(o.id||('v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5))),name:o.name||'',pref:o.pref||'',cap:o.cap??null,memo:o.memo||'',sta:o.sta||'',maps:(o.maps||[]).filter(m=>m&&m.id).map(m=>({id:m.id,label:m.label||''})),ll:o.ll||null});
 function setSeg(t){document.querySelectorAll('#setSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.setp').forEach(p=>p.hidden=p.dataset.t!==t)}
 function renderVenues(){
  const q=$('vq').value.trim().toLowerCase(),names=uniq([...venues.map(v=>v.name),...es.map(e=>e.venue)]).filter(n=>n&&!/某所/.test(n));
  const rows=names.map(n=>{const v=findVenue(n),ev=es.filter(e=>e.venue===n);return{n,v,c:ev.filter(att).length,pref:v?.pref||ev.find(e=>e.pref)?.pref||''}}).filter(x=>!q||x.n.toLowerCase().includes(q)).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n,'ja'));
- $('vlistS').innerHTML=`<div class="hint" style="margin:10px 0 0">${rows.length}会場（登録済み ${rows.filter(x=>x.v).length}）</div>`+rows.map(x=>`<div class="arow" onclick="openVenue('${encodeURIComponent(x.n)}')"><div style="min-width:0"><b>${esc(x.n)}</b><div class="event-meta">${[x.pref,x.v?.cap?Number(x.v.cap).toLocaleString()+'席':'',x.v?.maps?.length?`座席表${x.v.maps.length}枚`:''].filter(Boolean).map(esc).join('・')}${x.v?'':'<span style="color:#b08a3a">　未登録</span>'}</div></div><div class="n">${x.c}<small>回</small></div></div>`).join('')}
+ $('vlistS').innerHTML=`<div class="hint" style="margin:10px 0 0">${rows.length}会場（登録済み ${rows.filter(x=>x.v).length}）</div>`+rows.map(x=>`<div class="arow" onclick="openVenue('${encodeURIComponent(x.n)}')"><div style="min-width:0"><b>${esc(x.n)}</b><div class="event-meta">${[x.pref,x.v?.cap?Number(x.v.cap).toLocaleString()+'席':'',x.v?.sta||'',x.v?.maps?.length?`座席表${x.v.maps.length}枚`:''].filter(Boolean).map(esc).join('・')}${x.v?'':'<span style="color:#b08a3a">　未登録</span>'}</div></div><div class="n">${x.c}<small>回</small></div></div>`).join('')}
 async function openVenue(enc){
  const name=enc?decodeURIComponent(enc):'',v=findVenue(name);
  vform={orig:v?v.name:name,reg:!!v,id:v?.id||null,maps:[]};
  $('vtitle').textContent=v?'会場を編集':name?'会場を登録':'会場を追加';
- $('v_name').value=name;$('v_pref').value=v?.pref||es.find(e=>e.venue===name&&e.pref)?.pref||'';$('v_cap').value=v?.cap??'';$('v_memo').value=v?.memo||'';
+ $('v_name').value=name;$('v_pref').value=v?.pref||es.find(e=>e.venue===name&&e.pref)?.pref||'';$('v_cap').value=v?.cap??'';$('v_sta').value=v?.sta||'';$('v_ocr').textContent='';$('v_memo').value=v?.memo||'';
  if(v)for(const m of v.maps){const d=await getMap(m.id);if(d)vform.maps.push({id:m.id,label:m.label,data:d})}
  else{for(const id of uniq(es.filter(e=>e.venue===name&&e.mapId).sort(byDesc).map(e=>e.mapId)).slice(0,3)){const d=await getMap(id);if(d)vform.maps.push({id,label:'',data:d})}}
  $('v_del').style.display=v?'':'none';$('v_del').textContent='この会場の登録を削除';delete $('v_del').dataset.c;
- renderVMaps();
+ renderVMaps();renderDist(name);
  const ev=name?es.filter(e=>e.venue===name).sort(byDesc):[];$('v_evh').textContent=ev.length?`この会場の記録（${ev.filter(att).length}回参戦）`:'';$('v_evs').innerHTML=ev.map(card).join('');
  show('venue')}
 function renderVMaps(){
  $('v_maps').innerHTML=vform.maps.map((m,i)=>`<div class="vmapitem"><div class="row"><input data-l="${i}" value="${esc(m.label)}" placeholder="名前（例：1階、2階、センターステージ）"><button type="button" class="ghost danger" data-x="${i}">外す</button></div>${mapHTML(m.data,null)}</div>`).join('')||'<div class="hint" style="margin:0 0 8px">まだ座席表がありません</div>';
  $('v_maps').querySelectorAll('input[data-l]').forEach(x=>x.oninput=()=>{vform.maps[+x.dataset.l].label=x.value});
  $('v_maps').querySelectorAll('button[data-x]').forEach(b=>b.onclick=()=>{vform.maps.splice(+b.dataset.x,1);renderVMaps()})}
-$('v_mapFile').onchange=async function(){const fs=[...this.files];this.value='';for(const f of fs){try{vform.maps.push({id:null,label:'',data:await compress(f)});renderVMaps()}catch(e){imgErr(e)}}};
+$('v_mapFile').onchange=async function(){const fs=[...this.files];this.value='';for(const f of fs){try{vform.maps.push({id:null,label:'',data:await compress(f)});renderVMaps()}catch(e){imgErr(e)}}if(vform.maps.length&&(!$('v_cap').value||!$('v_sta').value))ocrVenue()};
 function closeVenue(){show('data');setSeg('venue')}
 async function saveVenue(){
  const name=$('v_name').value.trim();if(!name){toast('会場名を入れてください');return}
  if(name!==vform.orig&&findVenue(name)){toast('同じ名前の会場がすでに登録されています');return}
  const old=vform.reg?findVenue(vform.orig):null,vm=[];
  for(const m of vform.maps){if(!m.id){const id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);if(await S.set('map:'+id,m.data)){maps[id]=m.data;m.id=id}else{toast('座席表の保存に失敗しました');continue}}vm.push({id:m.id,label:m.label.trim()})}
- const v=normV({id:vform.id,name,pref:$('v_pref').value,cap:$('v_cap').value===''?null:+$('v_cap').value,memo:$('v_memo').value.trim(),maps:vm,ll:old?.ll||null});
+ const v=normV({id:vform.id,name,pref:$('v_pref').value,cap:$('v_cap').value===''?null:+$('v_cap').value,memo:$('v_memo').value.trim(),sta:$('v_sta').value.trim(),maps:vm,ll:old?.ll||null});
  if(old)venues[venues.indexOf(old)]=v;else venues.push(v);
  let moved=0;if(vform.orig&&name!==vform.orig){es.forEach(e=>{if(e.venue===vform.orig){e.venue=name;moved++}});if(moved)await saveEvents();if(settings.geo?.[vform.orig]&&!settings.geo[name]){settings.geo[name]=settings.geo[vform.orig];saveSettings()}}
  await saveVenues();for(const m of old?.maps||[])if(!vm.some(x=>x.id===m.id))await cleanupMap(m.id);
@@ -1068,6 +1092,42 @@ function renderEnv(){
   ['アプリのバージョン',APP_VER],
   ['最後の画像エラー',lastImgErr?esc(lastImgErr):'なし']];
  $('envBox').innerHTML=rows.map(([a,b])=>`<div class="envrow"><span>${a}</span><span>${b}</span></div>`).join('')+(storeOK?'':'<div class="hint" style="color:#c0564b">この開き方ではデータが保存されません。Safariで開いて「ホーム画面に追加」したアイコンから使ってください。</div>')}
+
+/* ---------- 会場：座席の分布 ---------- */
+function renderDist(name){
+ const box=$('v_dist');if(!name||!vform){box.innerHTML='';return}
+ let h='';
+ for(const m of vform.maps){if(!m.id)continue;
+  const ev=es.filter(e=>e.mapId===m.id&&e.point&&att(e)).sort(byAsc);if(!ev.length)continue;
+  const col=e=>evOshi(e)[0]||'var(--ac)';
+  const dots=ev.map((e,i)=>`<div class="sdot" data-i="${i}" style="left:${e.point.x}%;top:${e.point.y}%;--c:${col(e)}">${i+1}</div>`).join('');
+  h+=`<h3>座席の分布${m.label?'（'+esc(m.label)+'）':''}　${ev.length}回</h3><div class="distbox">${mapHTML(m.data,null,dots)}<div class="dlist">${ev.map((e,i)=>`<div data-i="${i}" data-id="${e.id}" style="--c:${col(e)}"><b>${i+1}</b><span>${esc(e.name)}${e.part?' '+esc(e.part):''}</span><em>${fmtD(e.date).slice(0,10)}${e.seat?'・'+esc(e.seat):''}</em></div>`).join('')}</div></div>`}
+ box.innerHTML=h;
+ box.querySelectorAll('.distbox').forEach(db=>{const hl=i=>{db.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));db.querySelectorAll(`[data-i="${i}"]`).forEach(x=>x.classList.add('hl'))};
+  db.querySelectorAll('.sdot').forEach(d=>d.onclick=ev=>{ev.stopPropagation();hl(d.dataset.i);const row=db.querySelector(`.dlist [data-i="${d.dataset.i}"]`);toast(row.querySelector('span').textContent+'　'+row.querySelector('em').textContent,3500)});
+  db.querySelectorAll('.dlist div').forEach(r=>r.onclick=()=>{if(r.classList.contains('hl'))detail(r.dataset.id);else hl(r.dataset.i)})})}
+
+/* ---------- 会場：座席表の画像から読み取り（OCR） ---------- */
+let tessP=null;
+function loadTess(){if(window.Tesseract)return Promise.resolve();if(tessP)return tessP;tessP=new Promise((ok,ng)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=ok;sc.onerror=()=>{tessP=null;ng()};document.head.appendChild(sc)});return tessP}
+const zen2han=t=>t.replace(/[０-９，．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+function parseVenueText(txt){
+ txt=zen2han(txt);const lines=txt.split(/\n/).map(l=>l.replace(/\s+/g,'')).filter(Boolean),all=lines.join('\n');
+ let cap=null;for(const m of all.matchAll(/(\d{1,3}(?:[,.]\d{3})+|\d{3,6})席/g)){const n=+m[1].replace(/[,.]/g,'');if(n>=50&&n<=100000&&(!cap||n>cap))cap=n}
+ let sta='';for(const l of lines){const m=l.match(/([一-龥ぁ-んァ-ヶーA-Za-z]{1,10}?駅)(?:から|より|下車|徒歩|西口|東口|南口|北口|直結|すぐ)/)||l.match(/^([一-龥ァ-ヶー]{1,10}駅)$/);if(m){sta=m[1];break}}
+ const w=all.match(/徒歩約?(\d{1,2})分/);if(sta&&w)sta+=`から徒歩${/約/.test(w[0])?'約':''}${w[1]}分`;else if(sta&&/直結/.test(all))sta+='直結';
+ return{cap,sta}}
+async function ocrVenue(){
+ const m=vform?.maps?.[0];if(!m){toast('先に座席表の画像を追加してください');return}
+ const st=$('v_ocr');st.textContent='読み取りの準備中…（初回は読み取り用データのダウンロードに少し時間がかかります）';
+ try{await loadTess();
+  const w=await Tesseract.createWorker('jpn',1,{logger:x=>{if(x.status==='recognizing text')st.textContent=`読み取り中… ${Math.round(x.progress*100)}%`}});
+  let txt='';for(const mm of vform.maps.slice(0,2)){const{data}=await w.recognize(mm.data);txt+='\n'+data.text}await w.terminate();
+  const{cap,sta}=parseVenueText(txt),got=[];
+  if(cap&&!$('v_cap').value){$('v_cap').value=cap;got.push('収容人数 '+cap.toLocaleString()+'席')}
+  if(sta&&!$('v_sta').value){$('v_sta').value=sta;got.push('最寄り駅 '+sta)}
+  st.textContent=got.length?`読み取りました：${got.join('／')}（違っていたら直して保存してください）`:(cap||sta?'読み取れた内容はすでに入力済みでした':'読み取れませんでした。手で入力してください')}
+ catch(e){st.textContent='読み取りできませんでした（ネットにつながっているときに試してください）'}}
 
 /* ---------- 起動 ---------- */
 (async()=>{
